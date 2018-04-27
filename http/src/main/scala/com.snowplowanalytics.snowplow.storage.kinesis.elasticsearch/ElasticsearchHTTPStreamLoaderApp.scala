@@ -19,10 +19,11 @@
 
 package com.snowplowanalytics.elasticsearch.loader
 
-import clients.{ElasticsearchSender, ElasticsearchSenderHTTP}
+import clients.{BulkSender, BulkSenderHTTP}
+import com.snowplowanalytics.elasticsearch.loader.utils.{CredentialsLookup, SnowplowTracking}
 
 /** Main entry point for the Elasticsearch HTTP sink */
-object ElasticsearchHTTPSinkApp extends App with ElasticsearchSinkApp {
+object ElasticsearchHTTPStreamLoaderApp extends App with StreamLoaderApp {
   override lazy val arguments = args
 
   val config = parseConfig().get
@@ -37,8 +38,8 @@ object ElasticsearchHTTPSinkApp extends App with ElasticsearchSinkApp {
   val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
   val tracker = config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
 
-  override lazy val elasticsearchSender: ElasticsearchSender =
-    new ElasticsearchSenderHTTP(esEndpoint, esPort, esUsername, esPassword, credentials, region, ssl, signing, tracker, maxConnectionTime)
+  override lazy val bulkSender: BulkSender =
+    new BulkSenderHTTP(esEndpoint, esPort, esUsername, esPassword, credentials, region, ssl, signing, tracker, maxConnectionTime)
 
   run(config)
 }

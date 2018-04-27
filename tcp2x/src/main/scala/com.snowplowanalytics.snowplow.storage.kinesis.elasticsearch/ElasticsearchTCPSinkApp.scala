@@ -19,18 +19,19 @@
 
 package com.snowplowanalytics.elasticsearch.loader
 
-import clients.{ElasticsearchSender, ElasticsearchSenderTCP}
+import clients.{BulkSender, BulkSenderTCP}
+import com.snowplowanalytics.elasticsearch.loader.utils.SnowplowTracking
 
 /** Main entry point for the Elasticsearch TCP sink */
-object ElasticsearchTCPSinkApp extends App with ElasticsearchSinkApp {
+object ElasticsearchTCPSinkApp extends App with StreamLoaderApp {
   override lazy val arguments = args
 
   val config = parseConfig().get
   val maxConnectionTime = config.elasticsearch.client.maxTimeout
   val tracker = config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
 
-  override lazy val elasticsearchSender: ElasticsearchSender =
-    new ElasticsearchSenderTCP(convertConfig(config), tracker, maxConnectionTime)
+  override lazy val bulkSender: BulkSender =
+    new BulkSenderTCP(convertConfig(config), tracker, maxConnectionTime)
 
   run(config)
 }

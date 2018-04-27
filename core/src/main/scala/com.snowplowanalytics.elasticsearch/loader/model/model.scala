@@ -24,6 +24,9 @@ import java.text.SimpleDateFormat
 import scala.util.Try
 
 package model {
+
+  import com.snowplowanalytics.elasticsearch.loader.utils.utils
+
   sealed trait StreamType
   case object Good extends StreamType
   case object Bad extends StreamType

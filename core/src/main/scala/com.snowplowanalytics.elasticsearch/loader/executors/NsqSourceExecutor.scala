@@ -17,16 +17,19 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.executors
 
 // NSQ
-import com.snowplowanalytics.client.nsq.NSQConsumer
-import com.snowplowanalytics.client.nsq.lookup.DefaultNSQLookup
-import com.snowplowanalytics.client.nsq.NSQMessage
-import com.snowplowanalytics.client.nsq.NSQConfig
-import com.snowplowanalytics.client.nsq.callbacks.NSQMessageCallback
-import com.snowplowanalytics.client.nsq.callbacks.NSQErrorCallback
+import com.snowplowanalytics.client.nsq.{NSQConfig, NSQConsumer, NSQMessage}
+import com.snowplowanalytics.client.nsq.callbacks.{NSQErrorCallback, NSQMessageCallback}
 import com.snowplowanalytics.client.nsq.exceptions.NSQException
+import com.snowplowanalytics.client.nsq.lookup.DefaultNSQLookup
+import com.snowplowanalytics.elasticsearch.loader.EmitterInput
+import com.snowplowanalytics.elasticsearch.loader.clients.BulkSender
+import com.snowplowanalytics.elasticsearch.loader.emitters.ElasticsearchEmitter
+import com.snowplowanalytics.elasticsearch.loader.model._
+import com.snowplowanalytics.elasticsearch.loader.sinks.ISink
+import com.snowplowanalytics.elasticsearch.loader.transformers.{BadEventTransformer, PlainJsonTransformer, SnowplowElasticsearchTransformer}
 
 //Java
 import java.nio.charset.StandardCharsets.UTF_8
@@ -38,9 +41,6 @@ import scala.collection.mutable.ListBuffer
 import org.slf4j.LoggerFactory
 
 // This project
-import sinks._
-import clients._
-import model._
 
 /**
  * NSQSource executor
@@ -60,7 +60,7 @@ class NsqSourceExecutor(
   config: ESLoaderConfig,
   goodSink: Option[ISink],
   badSink: ISink,
-  elasticsearchSender: ElasticsearchSender
+  elasticsearchSender: BulkSender
 ) extends Runnable {
 
   lazy val log = LoggerFactory.getLogger(getClass())

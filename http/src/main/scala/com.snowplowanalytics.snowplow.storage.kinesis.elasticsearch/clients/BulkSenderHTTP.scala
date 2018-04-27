@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-class ElasticsearchSenderHTTP(
+class BulkSenderHTTP(
   endpoint: String,
   port: Int,
   username: String,
@@ -83,7 +83,7 @@ class ElasticsearchSenderHTTP(
   // do not close the es client, otherwise it will fail when resharding
   override def close(): Unit = ()
 
-  override def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput] = {
+  override def send(records: List[EmitterInput]): List[EmitterInput] = {
     val connectionAttemptStartTime = System.currentTimeMillis()
 
     val (successes, oldFailures) = records.partition(_._2.isSuccess)
@@ -111,7 +111,7 @@ class ElasticsearchSenderHTTP(
     } else Nil
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records to Elasticseacrch")
-    if (newFailures.nonEmpty) logClusterHealth()
+    if (newFailures.nonEmpty) logHealth()
 
     val allFailures = oldFailures ++ newFailures
 
@@ -121,7 +121,7 @@ class ElasticsearchSenderHTTP(
   }
 
   /** Logs the cluster health */
-  override def logClusterHealth(): Unit =
+  override def logHealth(): Unit =
     client.execute(clusterHealth) onComplete {
       case SSuccess(health) => health.status match {
         case "green"  => log.info("Cluster health is green")

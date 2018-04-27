@@ -15,6 +15,9 @@ package com.snowplowanalytics.elasticsearch.loader
 package clients
 
 // Scala
+
+import com.snowplowanalytics.elasticsearch.loader.utils.SnowplowTracking
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -30,7 +33,7 @@ import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObje
 // SLF4j
 import org.slf4j.Logger
 
-trait Elastic4sSender extends ElasticsearchSender {
+trait Elastic4sSender extends BulkSender {
   val log: Logger
 
   val maxConnectionWaitTimeMs: Long

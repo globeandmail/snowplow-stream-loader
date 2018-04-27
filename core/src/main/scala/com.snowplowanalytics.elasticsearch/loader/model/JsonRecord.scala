@@ -17,9 +17,12 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.model
 
-/** Like the connector library's ITransformer, but for consuming from stdin */
-trait StdinTransformer {
-  def consumeLine(line: String): EmitterInput
-}
+/**
+ * Format in which Snowplow events are buffered
+ *
+ * @param json The JSON string for the event
+ * @param id The event ID (if it exists)
+ */
+case class JsonRecord(json: String, id: Option[String])

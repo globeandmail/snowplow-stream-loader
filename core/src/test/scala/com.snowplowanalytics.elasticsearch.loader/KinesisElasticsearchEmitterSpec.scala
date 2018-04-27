@@ -16,6 +16,8 @@ package com.snowplowanalytics.elasticsearch.loader
 // Java
 import java.util.Properties
 
+import com.snowplowanalytics.elasticsearch.loader.emitters.KinesisElasticsearchEmitter
+
 // Scala
 import scala.collection.mutable.ListBuffer
 
@@ -42,21 +44,21 @@ import org.specs2.mutable.Specification
 
 // This project
 import sinks._
-import clients.ElasticsearchSender
+import clients.BulkSender
 
-class MockElasticsearchSender extends ElasticsearchSender {
+class MockBulkSender extends BulkSender {
   var sentRecords: List[EmitterInput] = List.empty
   var callCount: Int = 0
   val calls: ListBuffer[List[EmitterInput]] = new ListBuffer
 
-  override def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput] = {
+  override def send(records: List[EmitterInput]): List[EmitterInput] = {
     sentRecords = sentRecords ::: records
     callCount += 1
     calls += records
     List.empty
   }
   override def close() = {}
-  override def logClusterHealth(): Unit = ()
+  override def logHealth(): Unit = ()
   override val tracker = None
 }
 
@@ -65,10 +67,10 @@ class KinesisElasticsearchEmitterSpec extends Specification {
   "The emitter" should {
     "return all invalid records" in {
 
-      val fakeSender = new ElasticsearchSender {
-        override def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput] = List.empty
+      val fakeSender = new BulkSender {
+        override def send(records: List[EmitterInput]): List[EmitterInput] = List.empty
         override def close(): Unit = ()
-        override def logClusterHealth(): Unit = ()
+        override def logHealth(): Unit = ()
         override val tracker = None
       }
 
@@ -93,7 +95,7 @@ class KinesisElasticsearchEmitterSpec extends Specification {
       props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, "1000")
 
       val kcc = new KinesisConnectorConfiguration(props, new DefaultAWSCredentialsProviderChain)
-      val ess = new MockElasticsearchSender
+      val ess = new MockBulkSender
       val eem = new KinesisElasticsearchEmitter(kcc, None, new StdouterrSink, ess)
 
       val validInput: EmitterInput = "good" -> new ElasticsearchObject("index" * 10000, "type", "{}").success
@@ -115,7 +117,7 @@ class KinesisElasticsearchEmitterSpec extends Specification {
       props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, "1000")
 
       val kcc = new KinesisConnectorConfiguration(props, new DefaultAWSCredentialsProviderChain)
-      val ess = new MockElasticsearchSender
+      val ess = new MockBulkSender
       val eem = new KinesisElasticsearchEmitter(kcc, None, new StdouterrSink, ess)
 
       val validInput: EmitterInput = "good" -> new ElasticsearchObject("index" * 10000, "type", "{}").success
@@ -137,7 +139,7 @@ class KinesisElasticsearchEmitterSpec extends Specification {
       props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, "1048576")
 
       val kcc = new KinesisConnectorConfiguration(props, new DefaultAWSCredentialsProviderChain)
-      val ess = new MockElasticsearchSender
+      val ess = new MockBulkSender
       val eem = new KinesisElasticsearchEmitter(kcc, None, new StdouterrSink, ess)
 
       val validInput: EmitterInput = "good" -> new ElasticsearchObject("index", "type", "{}").success
@@ -159,7 +161,7 @@ class KinesisElasticsearchEmitterSpec extends Specification {
       props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, "1048576")
 
       val kcc = new KinesisConnectorConfiguration(props, new DefaultAWSCredentialsProviderChain)
-      val ess = new MockElasticsearchSender
+      val ess = new MockBulkSender
       val eem = new KinesisElasticsearchEmitter(kcc, None, new StdouterrSink, ess)
 
       val validInput: EmitterInput = "good" -> new ElasticsearchObject("index", "type", "{}").success
@@ -181,7 +183,7 @@ class KinesisElasticsearchEmitterSpec extends Specification {
       props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, "200")
 
       val kcc = new KinesisConnectorConfiguration(props, new DefaultAWSCredentialsProviderChain)
-      val ess = new MockElasticsearchSender
+      val ess = new MockBulkSender
       val eem = new KinesisElasticsearchEmitter(kcc, None, new StdouterrSink, ess)
 
       // record size is 95 bytes

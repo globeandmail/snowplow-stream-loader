@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2013-2017 Snowplow Analytics Ltd.
+/**
+ * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
@@ -16,14 +16,12 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.elasticsearch.loader
 
-import scala.util.{Failure, Success, Try}
+package com.snowplowanalytics.elasticsearch.loader.transformers
 
-object utils {
-    // to rm once 2.12 as well as the right projections
-    def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B = t match {
-      case Success(a) => fa(a)
-      case Failure(t) => ft(t)
-    }
+import com.snowplowanalytics.elasticsearch.loader.EmitterInput
+
+/** Like the connector library's ITransformer, but for consuming from stdin */
+trait StdinTransformer {
+  def consumeLine(line: String): EmitterInput
 }

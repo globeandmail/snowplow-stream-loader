@@ -20,14 +20,15 @@
 package com.snowplowanalytics.elasticsearch.loader
 package clients
 
+import com.snowplowanalytics.elasticsearch.loader.utils.SnowplowTracking
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-trait ElasticsearchSender {
+trait BulkSender {
   val tracker: Option[Tracker]
 
-  def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput]
+  def send(records: List[EmitterInput]): List[EmitterInput]
   def close(): Unit
-  def logClusterHealth(): Unit
+  def logHealth(): Unit
 
   /**
    * Terminate the application in a way the KCL cannot stop, prevents shutdown hooks from running

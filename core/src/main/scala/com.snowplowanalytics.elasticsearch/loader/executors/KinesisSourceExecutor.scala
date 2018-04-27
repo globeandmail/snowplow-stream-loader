@@ -17,60 +17,56 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics
-package elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.executors
 
 // Logging
+import com.snowplowanalytics.elasticsearch.loader.clients.BulkSender
+import com.snowplowanalytics.elasticsearch.loader.emitters.KinesisElasticsearchPipeline
+import com.snowplowanalytics.elasticsearch.loader.model.StreamType
+import com.snowplowanalytics.elasticsearch.loader.sinks.ISink
+import com.snowplowanalytics.elasticsearch.loader.{EmitterInput, ValidatedRecord}
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import org.slf4j.LoggerFactory
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  KinesisConnectorConfiguration,
-  KinesisConnectorExecutorBase,
-  KinesisConnectorRecordProcessorFactory
-}
+import com.amazonaws.services.kinesis.connectors.{KinesisConnectorConfiguration, KinesisConnectorExecutorBase, KinesisConnectorRecordProcessorFactory}
 
 // AWS Client Library
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{KinesisClientLibConfiguration, Worker}
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
 
 // Java
 import java.util.Date
 
 // Tracker
-import snowplow.scalatracker.Tracker
 
 // This project
-import clients.ElasticsearchSender
-import sinks._
-import model._
 
 /**
- * Boilerplate class for Kinesis Conenector
+ * Boilerplate class for Kinesis Connector
  *
  * @param streamType the type of stream, good, bad or plain-json
  * @param documentIndex the elasticsearch index name
  * @param documentType the elasticsearch index type
  * @param config the KCL configuration
  * @param initialPosition initial position for kinesis stream
- * @param timestamp timestamp for "AT_TIMESTAMP" initial position
+ * @param initialTimestamp timestamp for "AT_TIMESTAMP" initial position
  * @param goodSink the configured GoodSink
  * @param badSink the configured BadSink
  * @param elasticsearchSender function for sending to elasticsearch 
  * @param tracker a Tracker instance
  */
 class KinesisSourceExecutor(
-  streamType: StreamType,
-  documentIndex: String,
-  documentType: String,
-  config: KinesisConnectorConfiguration,
-  initialPosition: String,
-  initialTimestamp: Option[Date],
-  goodSink: Option[ISink],
-  badSink: ISink,
-  elasticsearchSender: ElasticsearchSender,
-  tracker: Option[Tracker] = None
+                             streamType: StreamType,
+                             documentIndex: String,
+                             documentType: String,
+                             config: KinesisConnectorConfiguration,
+                             initialPosition: String,
+                             initialTimestamp: Option[Date],
+                             goodSink: Option[ISink],
+                             badSink: ISink,
+                             elasticsearchSender: BulkSender,
+                             tracker: Option[Tracker] = None
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)

@@ -17,26 +17,24 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics
-package elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.emitters
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.interfaces.{
-  IEmitter,
-  IKinesisConnectorPipeline
-}
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
-import com.amazonaws.services.kinesis.connectors.impl.{BasicMemoryBuffer,AllPassFilter}
+import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
+import com.amazonaws.services.kinesis.connectors.interfaces.{IEmitter, IKinesisConnectorPipeline}
+import com.snowplowanalytics.elasticsearch.loader.clients.BulkSender
+import com.snowplowanalytics.elasticsearch.loader.model.{Bad, Good, PlainJson, StreamType}
+import com.snowplowanalytics.elasticsearch.loader.sinks.ISink
+import com.snowplowanalytics.elasticsearch.loader.{EmitterInput, ValidatedRecord}
+import com.snowplowanalytics.elasticsearch.loader.transformers.{BadEventTransformer, PlainJsonTransformer, SnowplowElasticsearchTransformer}
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // This project
-import sinks._
-import model._
 
 // Tracker
-import snowplow.scalatracker.Tracker
 
 // This project
-import clients.ElasticsearchSender
 
 /**
  * KinesisElasticsearchPipeline class sets up the Emitter/Buffer/Transformer/Filter
@@ -50,13 +48,13 @@ import clients.ElasticsearchSender
  * @param tracker a Tracker instance
  */
 class KinesisElasticsearchPipeline(
-  streamType: StreamType,
-  documentIndex: String,
-  documentType: String,
-  goodSink: Option[ISink],
-  badSink: ISink,
-  elasticsearchSender: ElasticsearchSender,
-  tracker: Option[Tracker] = None
+                                    streamType: StreamType,
+                                    documentIndex: String,
+                                    documentType: String,
+                                    goodSink: Option[ISink],
+                                    badSink: ISink,
+                                    elasticsearchSender: BulkSender,
+                                    tracker: Option[Tracker] = None
 ) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
   override def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterInput] =

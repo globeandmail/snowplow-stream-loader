@@ -17,21 +17,24 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.emitters
 
 // Java
 import java.io.IOException
+
+import com.snowplowanalytics.elasticsearch.loader.clients.BulkSender
+import com.snowplowanalytics.elasticsearch.loader.sinks.ISink
+import com.snowplowanalytics.elasticsearch.loader.EmitterInput
+import com.snowplowanalytics.elasticsearch.loader.model.BadRow
 
 // Scala
 import scala.collection.mutable.ListBuffer
 
 // Scalaz
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 // This project
-import sinks._
-import clients._
 
 /**
  * ElasticsearchEmitter class
@@ -43,11 +46,11 @@ import clients._
  * @param bufferByteLimit byte limit for buffer
  */
 class ElasticsearchEmitter (
-  elasticsearchSender: ElasticsearchSender,
-  goodSink: Option[ISink],
-  badSink: ISink,
-  bufferRecordLimit: Long,
-  bufferByteLimit: Long
+                             elasticsearchSender: BulkSender,
+                             goodSink: Option[ISink],
+                             badSink: ISink,
+                             bufferRecordLimit: Long,
+                             bufferByteLimit: Long
 ) {
   /**
    * Emits good records to stdout or Elasticsearch.
@@ -104,7 +107,7 @@ class ElasticsearchEmitter (
   private def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput] = {
     val failures = for {
       recordSlice <- splitBuffer(records, bufferByteLimit, bufferRecordLimit)
-    } yield elasticsearchSender.sendToElasticsearch(recordSlice)
+    } yield elasticsearchSender.send(recordSlice)
     failures.flatten
   }
 

@@ -23,6 +23,10 @@ package com.snowplowanalytics.elasticsearch.loader
 import java.io.File
 import java.util.Properties
 
+import com.snowplowanalytics.elasticsearch.loader.executors.{KinesisSourceExecutor, NsqSourceExecutor}
+import com.snowplowanalytics.elasticsearch.loader.transformers.{BadEventTransformer, PlainJsonTransformer, SnowplowElasticsearchTransformer}
+import com.snowplowanalytics.elasticsearch.loader.utils.{CredentialsLookup, SnowplowTracking}
+
 // Config
 import com.typesafe.config.ConfigFactory
 
@@ -44,9 +48,9 @@ import model._
 /**
  * Main entry point for the Elasticsearch sink
  */
-trait ElasticsearchSinkApp {
+trait StreamLoaderApp {
   def arguments: Array[String]
-  def elasticsearchSender: ElasticsearchSender
+  def bulkSender: BulkSender
 
   def parseConfig(): Option[ESLoaderConfig] = {
     val projectName = "snowplow-elasticsearch-loader"
@@ -165,7 +169,7 @@ trait ElasticsearchSinkApp {
                                   conf.kinesis.timestamp,
                                   goodSink,
                                   badSink,
-                                  elasticsearchSender,
+                                  bulkSender,
                                   tracker
                                  ).success
 
@@ -177,7 +181,7 @@ trait ElasticsearchSinkApp {
                               conf,
                               goodSink,
                               badSink,
-                              elasticsearchSender
+                              bulkSender
                              ).success
 
       // Run locally, reading from stdin and sending events to stdout / stderr rather than Elasticsearch / Kinesis
@@ -195,7 +199,7 @@ trait ElasticsearchSinkApp {
             f => badSink.store(BadRow(emitterInput._1, f).toCompactJson, None, false),
             s => goodSink match {
               case Some(gs) => gs.store(s.getSource, None, true)
-              case None => elasticsearchSender.sendToElasticsearch(List(ln -> s.success))
+              case None => bulkSender.send(List(ln -> s.success))
             }
           )
         }

@@ -17,27 +17,30 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.transformers
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
 
+import com.snowplowanalytics.elasticsearch.loader.model.JsonRecord
+import com.snowplowanalytics.elasticsearch.loader.{EmitterInput, ValidatedRecord}
+
 // Amazon
-import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
+import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 
 // Scalaz
-import scalaz._
-import Scalaz._
+import scalaz.Scalaz._
+//import scalaz._
 
 // TODO consider giving BadEventTransformer its own types
 
 /**
  * Class to convert bad events to ElasticsearchObjects
  *
- * @param the elasticsearch index name
- * @param the elasticsearch index type
+ * @param documentIndex elasticsearch index name
+ * @param documentType elasticsearch index type
  */
 class BadEventTransformer(documentIndex: String, documentType: String)
   extends ITransformer[ValidatedRecord, EmitterInput] with StdinTransformer {

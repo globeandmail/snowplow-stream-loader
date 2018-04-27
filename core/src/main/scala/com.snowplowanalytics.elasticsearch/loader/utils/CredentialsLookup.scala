@@ -17,7 +17,7 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.utils
 
 // Amazon
 import com.amazonaws.auth._

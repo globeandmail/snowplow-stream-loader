@@ -17,14 +17,17 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.transformers
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
 
+import com.snowplowanalytics.elasticsearch.loader.model.JsonRecord
+import com.snowplowanalytics.elasticsearch.loader.{EmitterInput, ValidatedRecord}
+
 // Amazon
-import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
+import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 
 // json4s
@@ -32,8 +35,8 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
 // Scalaz
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 // Snowplow
 import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer._

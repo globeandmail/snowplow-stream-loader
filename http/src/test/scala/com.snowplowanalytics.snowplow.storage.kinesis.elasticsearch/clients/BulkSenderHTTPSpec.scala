@@ -16,6 +16,7 @@ package clients
 
 // Amazon
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
+import com.snowplowanalytics.elasticsearch.loader.utils.utils.CredentialsLookup
 
 // elastic4s
 import com.sksamuel.elastic4s.ElasticDsl._
@@ -27,19 +28,19 @@ import scalaz._
 // specs2
 import org.specs2.mutable.Specification
 
-class ElasticsearchSenderHTTPSpec extends Specification {
+class BulkSenderHTTPSpec extends Specification {
   val node = LocalNode("es", System.getProperty("java.io.tmpdir"))
   node.start()
   val client = node.elastic4sclient()
   val creds = CredentialsLookup.getCredentialsProvider("a", "s")
-  val sender = new ElasticsearchSenderHTTP(node.ip, node.port, creds, "region", false, false, None, 1000L, 1)
+  val sender = new BulkSenderHTTP(node.ip, node.port, creds, "region", false, false, None, 1000L, 1)
   val index = "idx"
   client.execute(createIndex(index)).await
 
   "sendToElasticsearch" should {
     "successfully send stuff" in {
       val data = List(("a", Success(new ElasticsearchObject(index, "t", "i", """{"s":"json"}"""))))
-      sender.sendToElasticsearch(data) must_== List.empty
+      sender.send(data) must_== List.empty
       // eventual consistency
       Thread.sleep(1000)
       client.execute(search(index)).await.hits.head.sourceAsString must_== """{"s":"json"}"""
@@ -47,7 +48,7 @@ class ElasticsearchSenderHTTPSpec extends Specification {
 
     "report old failures" in {
       val data = List(("a", Failure(NonEmptyList("f"))))
-      sender.sendToElasticsearch(data) must_== List(("a", Failure(NonEmptyList("f"))))
+      sender.send(data) must_== List(("a", Failure(NonEmptyList("f"))))
     }
   }
 }

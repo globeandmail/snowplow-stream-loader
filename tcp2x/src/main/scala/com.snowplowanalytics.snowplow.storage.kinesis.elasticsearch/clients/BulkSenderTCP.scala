@@ -23,6 +23,7 @@ package clients
 // Amazon
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
+import com.snowplowanalytics.elasticsearch.loader.utils.SnowplowTracking
 
 // Elasticsearch
 import org.elasticsearch.cluster.health.ClusterHealthStatus
@@ -48,11 +49,11 @@ import java.net.InetAddress
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-class ElasticsearchSenderTCP(
+class BulkSenderTCP(
   configuration: KinesisConnectorConfiguration,
   override val tracker: Option[Tracker] = None,
   maxConnectionWaitTimeMs: Long = 60000
-) extends ElasticsearchSender {
+) extends BulkSender {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -140,7 +141,7 @@ class ElasticsearchSenderTCP(
    * @param records List of records to send to Elasticsearch
    * @return List of inputs which Elasticsearch rejected
    */
-  override def sendToElasticsearch(records: List[EmitterInput]): List[EmitterInput] = {
+  override def send(records: List[EmitterInput]): List[EmitterInput] = {
 
     val bulkRequest = elasticsearchClient.prepareBulk()
 
@@ -205,7 +206,7 @@ class ElasticsearchSenderTCP(
         log.info(s"Emitted ${records.size - failures.size - numberOfSkippedRecords} records to Elasticsearch")
 
         if (!failures.isEmpty) {
-          logClusterHealth()
+          logHealth()
           log.warn(s"Returning ${failures.size} records as failed")
         }
 
@@ -240,7 +241,7 @@ class ElasticsearchSenderTCP(
   /**
    * Logs the Elasticsearch cluster's health
    */
-  override def logClusterHealth(): Unit = {
+  override def logHealth(): Unit = {
     val healthRequestBuilder = elasticsearchClient.admin.cluster.prepareHealth()
     val response = healthRequestBuilder.execute.actionGet
     if (response.getStatus.equals(ClusterHealthStatus.RED)) {

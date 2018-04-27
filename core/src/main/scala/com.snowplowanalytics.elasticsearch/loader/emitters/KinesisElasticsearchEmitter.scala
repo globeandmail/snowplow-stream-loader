@@ -17,38 +17,32 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics
-package elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.emitters
 
 // Amazon
-import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
-import com.amazonaws.services.kinesis.connectors.{
-  KinesisConnectorConfiguration,
-  UnmodifiableBuffer
-}
+import com.amazonaws.services.kinesis.connectors.{KinesisConnectorConfiguration, UnmodifiableBuffer}
+import com.snowplowanalytics.elasticsearch.loader.EmitterInput
+import com.snowplowanalytics.elasticsearch.loader.clients.BulkSender
+import com.snowplowanalytics.elasticsearch.loader.sinks.ISink
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // Java
 import java.io.IOException
 import java.util.{List => JList}
 
 // Joda-Time
-import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone}
 
 // Scala
 import scala.collection.JavaConversions._
 
 // Scalaz
-import scalaz._
-import Scalaz._
 
 // Tracker
-import snowplow.scalatracker.Tracker
 
 // This project
-import sinks._
-import clients._
 
 /**
  * Class to send valid records to Elasticsearch and invalid records to Kinesis
@@ -60,11 +54,11 @@ import clients._
  * @param tracker a Tracker instance
  */
 class KinesisElasticsearchEmitter(
-  configuration: KinesisConnectorConfiguration,
-  goodSink: Option[ISink],
-  badSink: ISink,
-  elasticsearchSender: ElasticsearchSender,
-  tracker: Option[Tracker] = None
+                                   configuration: KinesisConnectorConfiguration,
+                                   goodSink: Option[ISink],
+                                   badSink: ISink,
+                                   elasticsearchSender: BulkSender,
+                                   tracker: Option[Tracker] = None
 ) extends IEmitter[EmitterInput] {
 
   // An ISO valid timestamp formatter

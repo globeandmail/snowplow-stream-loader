@@ -14,6 +14,7 @@
 package com.snowplowanalytics.elasticsearch.loader
 
 // Specs2
+import com.snowplowanalytics.elasticsearch.loader.transformers.PlainJsonTransformer
 import org.specs2.mutable.Specification
 
 /**

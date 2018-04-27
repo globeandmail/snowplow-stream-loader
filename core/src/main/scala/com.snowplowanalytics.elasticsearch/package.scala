@@ -21,6 +21,7 @@ package com.snowplowanalytics.elasticsearch
 
 // Amazon
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
+import com.snowplowanalytics.elasticsearch.loader.model.JsonRecord
 
 // Scalaz
 import scalaz._

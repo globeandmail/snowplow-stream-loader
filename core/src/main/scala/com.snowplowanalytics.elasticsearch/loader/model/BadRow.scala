@@ -17,19 +17,19 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.elasticsearch.loader
+package com.snowplowanalytics.elasticsearch.loader.model
 
 // Scalaz
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 // json4s
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
 // Joda-Time
-import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.{DateTime, DateTimeZone}
 
 // JSON Schema
 import com.github.fge.jsonschema.core.report.{LogLevel, ProcessingMessage}

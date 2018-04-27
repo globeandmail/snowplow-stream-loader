@@ -16,6 +16,8 @@ package com.snowplowanalytics.elasticsearch.loader
 // Scalaz
 import scalaz._
 import Scalaz._
+import com.snowplowanalytics.elasticsearch.loader.model.JsonRecord
+import com.snowplowanalytics.elasticsearch.loader.transformers.BadEventTransformer
 
 // Specs2
 import org.specs2.mutable.Specification
