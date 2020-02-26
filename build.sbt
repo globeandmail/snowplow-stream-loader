@@ -54,6 +54,8 @@ lazy val buildSettings = Seq(
   shellPrompt   := { _ => "stream-loader> " }
 )
 
+coverageEnabled := true
+scapegoatVersion in ThisBuild := "1.3.2"
 //resolvers += "JCenter" at "https://jcenter.bintray.com/" // you can omit if you're planning to use Maven Central
 
 
