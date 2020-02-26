@@ -16,7 +16,6 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
 package sinks
 
 //Java
@@ -28,9 +27,9 @@ import com.snowplowanalytics.client.nsq.NSQProducer
 /**
  * NSQ sink
  *
- * @param host host for Nsq
- * @param port port for Nsq
- * @param outStreamName Nsq out stream
+ * @param host Nsq Host
+ * @param port Nsq port
+ * @param outStreamName outStreamName
  */
 class NsqSink(host: String, port: Int, outStreamName: String) extends ISink {
 

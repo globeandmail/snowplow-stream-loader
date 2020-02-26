@@ -1,0 +1,10 @@
+modules:
+- postgres:
+    tag_version: 0.10.10
+    build_args:
+    - PROTOCOL: postgres
+- elasticsearch:
+    tag_version: 1.0.4
+    push: false
+    build_args:
+    - PROTOCOL: elasticsearch

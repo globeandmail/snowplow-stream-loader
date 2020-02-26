@@ -16,24 +16,21 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
 package clients
 
-// Java
+import utils.SnowplowTracking
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import org.slf4j.Logger
-
-// Scala
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
-import scala.util.{Failure, Success}
 
 // Scalaz
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.{Strategy, Task}
 
-// Snowplow
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
+
+import scala.util.{Failure, Success}
 
 trait BulkSender[A] {
   val tracker: Option[Tracker]
@@ -69,7 +66,7 @@ trait BulkSender[A] {
   }
 
   /**
-   * Period between retrying sending events to Storage
+   * Period between retrying sending events to Elasticsearch
    * @param sleepTime Length of time between tries
    */
   protected def sleep(sleepTime: Long): Unit =
@@ -80,22 +77,16 @@ trait BulkSender[A] {
     }
 
   /** Predicate about whether or not we should retry sending stuff to ES */
-  def exPredicate(connectionStartTime: Long, storageType: String): (Throwable => Boolean) =
-    _ match {
-      case e: Exception =>
-        log.error("Storage threw an unexpected exception ", e)
-        tracker foreach { t =>
-          SnowplowTracking.sendFailureEvent(
-            t,
-            delays.head.toMillis,
-            0L,
-            connectionStartTime,
-            storageType,
-            e.getMessage)
-        }
-        true
-      case _ => false
-    }
+  def exPredicate(connectionStartTime: Long): (Throwable => Boolean) = _ match {
+    case e: Exception =>
+      log.error("Datastore threw an unexpected exception ", e)
+      tracker foreach { t =>
+        SnowplowTracking
+          .sendFailureEvent(t, delays.head.toMillis, 0L, connectionStartTime, "ELASTICSEARCH", e.getMessage)
+      }
+      true
+    case _ => false
+  }
 
   /** Turn a scala.concurrent.Future into a scalaz.concurrent.Task */
   def futureToTask[T](f: => Future[T])(implicit ec: ExecutionContext, s: Strategy): Task[T] =

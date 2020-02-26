@@ -16,66 +16,26 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
 package transformers
 
 // Java
-import java.nio.charset.StandardCharsets.UTF_8
-import java.util.UUID
 
-// Amazon
-import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
-import com.amazonaws.services.kinesis.model.Record
-
-// Scala
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.JsonDSL._
-
-// Scalaz
-import scalaz._
-import Scalaz._
+import com.snowplowanalytics.stream.loader.transformers.JsonTransformer
+import model.Config.StreamLoaderConfig
 
 /**
  * Class to convert plain JSON to EmitterInputs
  *
+ * @param documentIndexOrPrefix the elasticsearch index name
  */
-class PlainJsonTransformer
-    extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
-    with StdinTransformer {
-
-  /**
-   * Convert an Amazon Kinesis record to a json string
-   *
-   * @param record Byte array representation of an enriched event string
-   * @return ValidatedRecord for the event
-   */
-  override def toClass(record: Record): ValidatedJsonRecord = {
-    val recordString = new String(record.getData.array, UTF_8)
-    (recordString, toJsonRecord(recordString))
-  }
-
-  /**
-   * Parses a json string as a JsonRecord.
-   *
-   * @param jsonString the JSON string to be parsed
-   * @return the parsed JsonRecord
-   */
-  private def toJsonRecord(jsonString: String): ValidationNel[String, JsonRecord] = {
-    parseOpt(jsonString) match {
-      case Some(jvalue) =>
-        JsonRecord(jvalue ++ ("id" -> UUID.randomUUID().toString)).success
-      case None => "Json parsing error".failureNel
-    }
-  }
-
-  /**
-   * Consume data from stdin/NSQ rather than Kinesis
-   *
-   * @param line Line from stdin/NSQ
-   * @return Line as an EmitterInput
-   */
-  def consumeLine(line: String): EmitterJsonInput =
-    fromClass(line -> toJsonRecord(line))
-
-}
+class PlainJsonTransformer(
+  documentIndexOrPrefix: String,
+  documentIndexSuffixField: Option[String],
+  documentIndexSuffixFormat: Option[String],
+  mappingTable: Option[Map[String, String]]
+) extends JsonTransformer(
+      documentIndexOrPrefix: String,
+      documentIndexSuffixField: Option[String],
+      documentIndexSuffixFormat: Option[String],
+      mappingTable: Option[Map[String, String]]
+    )

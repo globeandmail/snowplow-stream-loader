@@ -16,34 +16,14 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream
+package model
 
-// Amazon
-import model.JsonRecord
+import org.json4s.JsonAST.JObject
 
-// Scalaz
-import scalaz._
-import Scalaz._
-
-// json4s
-import org.json4s._
-
-package object loader {
-
-  /**
-   * The original tab separated enriched event together with
-   * a validated ElasticsearchObject created from it (or list of errors
-   * if the creation process failed)
-   */
-  type ValidatedJsonRecord = (String, ValidationNel[String, JsonRecord])
-
-  /**
-   * The input type for the ElasticsearchSender objects
-   */
-  type EmitterJsonInput = (String, ValidationNel[String, JsonRecord])
-
-  /**
-   * Functions used to change a TSV pair to a JObject
-   */
-  type TsvToJsonConverter = (String, String) => ValidationNel[String, JObject]
-}
+/**
+ * Format in which Snowplow events are buffered
+ *
+ * @param json The JSON string for the event
+ * @param partition partition to send the data
+ */
+case class JsonRecord(json: JObject, partition: String)

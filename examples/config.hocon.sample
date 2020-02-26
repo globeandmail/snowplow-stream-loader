@@ -20,13 +20,14 @@
 # If set to "stdin", JSON documents will not be sent to Elasticsearch
 # but will be written to stdout.
 # "nsq" for reading unencoded tab-separated events from NSQ
-source = {{elasticsearchInputType}}
+source = "{{elasticsearchInputType}}"
 
 # Where to write good and bad records
 sink {
   # Sinks currently supported are:
   # "elasticsearch" for writing good records to Elasticsearch
   # "stdout" for writing good records to stdout
+  # "kinesis" for writing good records to kinesis
   good = "{{elasticsearchGoodOutputDestination}}"
 
   # Sinks currently supported are:
@@ -42,24 +43,37 @@ sink {
 # "plain-json" for writing plain json
 enabled = "{{kinesisInEnabledStreamType}}"
 
-# The following are used to authenticate for the Amazon Kinesis sink.
-#
-# If both are set to "default", the default provider chain is used
-# (see http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html)
-#
-# If both are set to "iam", use AWS IAM Roles to provision credentials.
-#
-# If both are set to "env", use environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 aws {
   accessKey = iam
   secretKey = iam
+
+  # Optional:
+  #  arnRole = "arn:aws:iam::{accountId}:role/{role}"
+  #  stsRegion = us-east-1
+  #  arnRole can be added to enable assume role, make sure to include stsRegion in this case
+  # arnRole = "{{arnRole}}"
+  # stsRegion = "{{stsRegion}}"
 }
 
-queue {
-  # What queue to use, can be "kinesis" or "nsq"
-  enabled="kinesis"
+queueConfig {
+  enabled = "kinesis"
 
-  # Config for Kinesis
+  # config for NSQ
+
+  # Channel name for NSQ source
+  # If more than one application reading from the same NSQ topic at the same time,
+  # all of them must have unique channel name for getting all the data from the same topic
+  # channelName = "{{nsqSourceChannelName}}"
+
+  # Host name for NSQ tools
+  # host = "{{nsqHost}}"
+
+  # HTTP port for nsqd
+  # port = {{nsqdPort}}
+
+  # HTTP port for nsqlookupd
+  # lookupPort = {{nsqlookupdPort}}
+
   # "LATEST": most recent data.
   # "TRIM_HORIZON": oldest available data.
   # "AT_TIMESTAMP": Start from the record at or after the specified timestamp
@@ -78,25 +92,21 @@ queue {
   # Region where the Kinesis stream is located
   region = "{{kinesisRegion}}"
 
+  ## Optional endpoint url configuration to override aws kinesis endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # customEndpoint = {{kinesisEndpoint}}
+
+  ## Optional endpoint url configuration to override aws dyanomdb endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # dynamodbCustomEndpoint = "http://localhost:4569"
+
   # "appName" is used for a DynamoDB table to maintain stream state.
   # You can set it automatically using: "SnowplowElasticsearchSink-${sink.kinesis.in.stream-name}"
   appName = "{{kinesisAppName}}"
 
-  # Config for NSQ
-  # Channel name for NSQ source
-  # If more than one application reading from the same NSQ topic at the same time,
-  # all of them must have unique channel name for getting all the data from the same topic
-  #channelName = "{{nsqSourceChannelName}}"
-
-  # Host name for nsqd
-  #nsqdHost = "{{nsqdHost}}"
-  # HTTP port for nsqd
-  #nsqdPort = {{nsqdPort}}
-
-  # Host name for nsqlookupd
-  #nsqlookupdHost = "{{nsqlookupdHost}}"
-  # HTTP port for nsqd
-  #nsqlookupdPort = {{nsqlookupdPort}}
+  # Initial RCU/WCU are optional. These are the settings for Dynamodb lease table throughput initalization
+  initialRCU = "{{leastTableInitialRCU}}"
+  initialWCU = "{{leastTableInitialWCU}}"
 }
 
 # Common configuration section for all stream sources
@@ -112,10 +122,25 @@ streams {
   # - the number of stored records exceeds recordLimit or
   # - the time in milliseconds since it was last emptied exceeds timeLimit
   buffer {
-    byteLimit = {{elasticsearchBufferByteThreshold}} # Not supported by NSQ, will be ignored
-    recordLimit = {{elasticsearchBufferRecordThreshold}}
-    timeLimit = {{elasticsearchBufferTimeThreshold}} # Not supported by NSQ, will be ignored
+    byteLimit = {{bufferByteThreshold}} # Not supported by NSQ, will be ignored
+    recordLimit = {{bufferRecordThreshold}}
+    timeLimit = {{bufferTimeThreshold}} # Not supported by NSQ, will be ignored
   }
+}
+
+# Sinks
+
+postgres {
+    server = "{{postgresServer}}"
+    port = "{{postgresPort}}"
+    databaseName = "{{postgresDatabaseName}}"
+    username = "{{postgresUsername}}"
+    password = "{{postgresPassword}}"
+    schemas = "{{postgresSchemas}}"
+    table = "{{postgresTable}}"
+    shardTableDateField = "{{shardDateField}}"
+    shardTableDateFormat = "{{shardDateFormat}}"
+    filterAppId = "{{postgresFilterAppId}}"
 }
 
 elasticsearch {
@@ -135,7 +160,7 @@ elasticsearch {
     username = "{{elasticsearchUsername}}"
     password = "{{elasticsearchPassword}}"
     maxTimeout = "{{elasticsearchMaxTimeout}}"
-    maxRetries = {{elasticsearchMaxRetries}}
+    maxRetries = "{{elasticsearchMaxRetries}}"
     ssl = {{sslBool}}
   }
 
@@ -153,18 +178,67 @@ elasticsearch {
   cluster {
     name = "{{elasticsearchClusterName}}"
     index = "{{elasticsearchIndex}}"
-    clusterType = "{{elasticsearchType}}"
+    documentType = "{{elasticsearchDocumentType}}"
+    indexDateField = "{{shardDateField}}"
+    indexDateFormat = "{{shardDateFormat}}"
   }
 }
 
+# In case you are loading data to S3.
+s3 {
+    bucket = "s3a://{{bucketName}}"
+    s3AccessKey = "{{S3AccessKey}}"
+    s3SecretKey = "{{S3SecretKey}}"
+    shardDateField = "{{shardDateField}}"
+    shardDateFormat = "{{shardDateFormat}}"
+}
+
+# If sink is set to Kinesis
+kinesis {
+    # The following are used to authenticate for the Amazon Kinesis sink.
+    # If both are set to "default", the default provider chain is used
+    # (see http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html)
+    # If both are set to "iam", use AWS IAM Roles to provision credentials.
+    # If both are set to "env", use environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+    #
+    # Optional:
+    #  kinesisArnRole = "arn:aws:iam::{accountId}:role/{role}"
+    #  kinesisStsRegion = us-east-1
+    #
+    #  arnRole can be added to enable assume role, make sure to include stsRegion in this case
+    kinesisAccessKey = "{{KinesisAccessKey}}"
+    kinesisSecretKey = "{{KinesisSecretKey}}"
+    #This filter is inclusive i.e. values mentioned here only will be allowed within the stream
+    filterAppId = "{{FilterAppId}}"
+    # kinesisArnRole = "{{KinesisArnRole}}"
+    # kinesisStsRegion = "{{KinesisStsRegion}}"
+}
 
 # Optional section for tracking endpoints
 monitoring {
   snowplow {
     collectorUri = "{{collectorUri}}"
     collectorPort = "{{collectorPort}}"
-    ssl = "{{sslMonitoring}}"
     appId = "{{appId}}"
     method = "{{method}}"
   }
+}
+
+# Table mapping settings for snowplow loader
+mappingTable {
+  "contexts_com_snowplowanalytics_snowplow_web_page_1" = "contexts_com_snowplow_web_page_1",
+  "contexts_com_snowplowanalytics_snowplow_ua_parser_context_1" = "contexts_com_snowplow_ua_parser_1",
+  "unstruct_event_com_snowplowanalytics_snowplow_uri_redirect_1" = "unstruct_com_snowplow_uri_redirect_1",
+  "unstruct_event_com_snowplowanalytics_snowplow_link_click_1" = "unstruct_com_snowplow_link_click_1",
+  "unstruct_event_com_snowplowanalytics_snowplow_ad_click_1" = "unstruct_com_snowplow_ad_click_1",
+  "unstruct_event_com_snowplowanalytics_snowplow_ad_impression_1" = "unstruct_com_snowplow_ad_impression_1",
+  "unstruct_event_com_snowplowanalytics_snowplow_ad_conversion_1" = "unstruct_com_snowplow_ad_conversion_1",
+  "unstruct_com_snowplowanalytics_snowplow_social_interaction_1" = "unstruct_com_snowplow_social_interaction_1",
+}
+
+deduplicationCache {
+    deduplicationEnabled = {{deduplicationEnabled}}
+    deduplicationField = "{{deduplicationField}}"
+    sizeLimit = {{deduplicationSizeLimit}}
+    timeLimit = {{deduplicationTimeLimit}}
 }

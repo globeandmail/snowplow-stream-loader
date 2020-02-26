@@ -16,32 +16,39 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
 package transformers
+
+// Java
+import java.nio.charset.StandardCharsets.UTF_8
+
+import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
+import model.JsonRecord
+import org.json4s.JsonAST.JObject
 
 // Amazon
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 
-// Java
-import java.nio.charset.StandardCharsets.UTF_8
-
-// Scala
-import org.json4s.JsonAST.JObject
+// json4s
 import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 // Scalaz
-import scalaz._
-import Scalaz._
+import scalaz.Scalaz._
+//import scalaz._
 
 // TODO consider giving BadEventTransformer its own types
 
 /**
  * Class to convert bad events to ElasticsearchObjects
  *
+ * @param documentIndexOrPrefix elasticsearch index name
  */
-class BadEventTransformer
-    extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
+class BadEventTransformer(
+  documentIndexOrPrefix: String,
+  documentIndexSuffixField: Option[String],
+  documentIndexSuffixFormat: Option[String]
+) extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
   /**
@@ -52,8 +59,17 @@ class BadEventTransformer
    */
   override def toClass(record: Record): ValidatedJsonRecord = {
     val recordString = new String(record.getData.array, UTF_8)
-    (recordString, JsonRecord(JObject(JField("source", JString(recordString)))).success)
+    (recordString, JsonRecord(parse(recordString).asInstanceOf[JObject], null).success)
   }
+
+  /**
+   * Convert a buffered bad event JSON to an ElasticsearchObject
+   *
+   * @param record JsonRecord containing a bad event JSON
+   * @return An ElasticsearchObject
+   */
+  override def fromClass(record: ValidatedJsonRecord): EmitterJsonInput =
+    (record._1, record._2.map(j => j))
 
   /**
    * Consume data from stdin rather than Kinesis
@@ -62,5 +78,5 @@ class BadEventTransformer
    * @return Line as an EmitterJsonInput
    */
   def consumeLine(line: String): EmitterJsonInput =
-    fromClass(line -> JsonRecord(JObject(JField("source", JString(line)))).success)
+    fromClass(line -> JsonRecord(parse(line).asInstanceOf[JObject], null).success)
 }

@@ -16,51 +16,51 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
+package com.snowplowanalytics.stream.loader.executors
 package executors
 
 // NSQ
-import com.snowplowanalytics.client.nsq.NSQConsumer
-import com.snowplowanalytics.client.nsq.lookup.DefaultNSQLookup
-import com.snowplowanalytics.client.nsq.NSQMessage
-import com.snowplowanalytics.client.nsq.NSQConfig
-import com.snowplowanalytics.client.nsq.callbacks.NSQMessageCallback
-import com.snowplowanalytics.client.nsq.callbacks.NSQErrorCallback
+import clients.BulkSender
+import com.amazonaws.services.kinesis.connectors.elasticsearch.{ElasticsearchEmitter}
+import com.snowplowanalytics.client.nsq.{NSQConfig, NSQConsumer, NSQMessage}
+import com.snowplowanalytics.client.nsq.callbacks.{NSQErrorCallback, NSQMessageCallback}
 import com.snowplowanalytics.client.nsq.exceptions.NSQException
+import com.snowplowanalytics.client.nsq.lookup.DefaultNSQLookup
+import com.snowplowanalytics.stream.loader.EmitterJsonInput
+import model.Config._
+import sinks.ISink
+import transformers.{BadEventTransformer, PlainJsonTransformer}
 
 //Java
 import java.nio.charset.StandardCharsets.UTF_8
 
 // Scala
 import scala.collection.mutable.ListBuffer
-import collection.JavaConverters._
 
 // Logging
 import org.slf4j.LoggerFactory
 
 // This project
-import sinks._
-import clients._
-import model._
-import transformers.{BadEventTransformer, EnrichedEventJsonTransformer, PlainJsonTransformer}
 
 /**
  * NSQSource executor
  *
  * @param streamType the type of stream, good, bad or plain-json
- * @param nsq Nsq NsqConfig
+ * @param documentIndex the elasticsearch index name
+ * @param documentType the elasticsearch index type
  * @param config ESLoader Configuration
  * @param goodSink the configured GoodSink
  * @param badSink the configured BadSink
- * @param bulkSender function for sending to storage
+ * @param elasticsearchSender function for sending to elasticsearch
  */
 class NsqSourceExecutor(
   streamType: StreamType,
-  nsq: Nsq,
+  documentIndex: String,
+  documentType: String,
   config: StreamLoaderConfig,
   goodSink: Option[ISink],
   badSink: ISink,
-  bulkSender: BulkSender[EmitterJsonInput]
+  elasticsearchSender: BulkSender[EmitterJsonInput]
 ) extends Runnable {
 
   lazy val log = LoggerFactory.getLogger(getClass())
@@ -68,22 +68,14 @@ class NsqSourceExecutor(
   // nsq messages will be buffered in msgBuffer until buffer size become equal to nsqBufferSize
   private val msgBuffer = new ListBuffer[EmitterJsonInput]()
   // ElasticsearchEmitter instance
-  private val emitter = new Emitter(
-    bulkSender,
-    goodSink,
-    badSink,
-    config.streams.buffer.recordLimit,
-    config.streams.buffer.byteLimit)
-  private val transformer = streamType match {
-    case Good      => new EnrichedEventJsonTransformer
-    case PlainJson => new PlainJsonTransformer
-    case Bad       => new BadEventTransformer
-  }
+
+  private val topicName = config.streams.inStreamName
+  //private val channelName = config.queueConfig.channelName
 
   /**
    * Consumer will be started to wait new message.
    */
-  override def run(): Unit = {
+  override def run(): Unit = { /*
     val nsqCallback = new NSQMessageCallback {
       val nsqBufferSize = config.streams.buffer.recordLimit
 
@@ -95,8 +87,8 @@ class NsqSourceExecutor(
           msg.finished()
 
           if (msgBuffer.size == nsqBufferSize) {
-            val rejectedRecords = emitter.emit(msgBuffer.toList)
-            emitter.fail(rejectedRecords.asJava)
+            val elasticsearchRejects = elasticsearchEmitter.attempEmit(msgBuffer.toList)
+            elasticsearchEmitter.fail(elasticsearchRejects)
             msgBuffer.clear()
           }
         }
@@ -105,19 +97,17 @@ class NsqSourceExecutor(
 
     val errorCallback = new NSQErrorCallback {
       override def error(e: NSQException): Unit =
-        log.error(s"Exception while consuming topic ${config.streams.inStreamName}", e)
+        log.error(s"Exception while consuming topic $topicName", e)
     }
 
     // use NSQLookupd
     val lookup = new DefaultNSQLookup
-    lookup.addLookupAddress(nsq.nsqlookupdHost, nsq.nsqlookupdPort)
-    val consumer = new NSQConsumer(
-      lookup,
-      config.streams.inStreamName,
-      nsq.channelName,
-      nsqCallback,
-      new NSQConfig(),
-      errorCallback)
-    consumer.start()
-  }
+    lookup.addLookupAddress(config.nsq.host, config.nsq.lookupPort)
+    val consumer = new NSQConsumer(lookup,
+                                   topicName,
+                                   channelName,
+                                   nsqCallback,
+                                   new NSQConfig(),
+                                   errorCallback)
+    consumer.start() */ }
 }

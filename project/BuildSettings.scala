@@ -12,9 +12,8 @@
  */
 
 // SBT
+import sbt.Keys._
 import sbt._
-import Keys._
-import scala.io.Source
 
 object BuildSettings {
 
@@ -60,8 +59,9 @@ object BuildSettings {
   import sbtassembly.AssemblyPlugin.autoImport._
   lazy val sbtAssemblySettings = Seq(
     assemblyJarName in assembly := { s"${moduleName.value}-${version.value}.jar" },
-    test in assembly := {},
+    //test in assembly := {},
     assemblyMergeStrategy in assembly := {
+      case PathList("com", "amazonaws", xs @ _*) => MergeStrategy.last
       case "META-INF/io.netty.versions.properties" => MergeStrategy.first
       case PathList("org", "joda", "time", "base", "BaseDateTime.class") => MergeStrategy.first
       case x =>
