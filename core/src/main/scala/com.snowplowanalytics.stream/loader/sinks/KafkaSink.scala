@@ -12,7 +12,7 @@ class KafkaSink(broker:String,topic:String) extends ISink {
 
   val rnd = new Random()
   val props = new Properties()
-  props.put("metadata.broker.list", broker)
+  props.put("bootstrap.servers", broker)
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("acks","all")

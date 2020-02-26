@@ -78,7 +78,6 @@ object PostgresStreamLoaderApp extends StreamLoaderApp {
         case Some(dcs) => dcs.deduplicationField
         case None => null
       }
-      println(config.postgres.get.password)
 
       new BulkSenderPostgres(
         config.postgres.get.server,

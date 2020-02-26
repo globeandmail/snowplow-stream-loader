@@ -1,6 +1,7 @@
 package com.snowplowanalytics.stream.loader
 package executors
 
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 import java.util
 import java.util.Properties
@@ -70,7 +71,7 @@ class KafkaSourceExecutor(streamType: StreamType,
           val record = consumer.poll(Duration.ofMillis(1000)).asScala
           for (data <- record.iterator)
             msgBuffer.synchronized {
-              val emitterInput = transformer.consumeLine(data.value().toString())
+              val emitterInput = transformer.consumeLine(data.value().map(_.toChar).mkString)
               msgBuffer += emitterInput
 
               if (msgBuffer.size == kafkaBufferSize) {

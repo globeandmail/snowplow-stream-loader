@@ -95,7 +95,7 @@ class BulkSenderPostgres(
           {
             if (filterVals.nonEmpty) {
               val filteredRecords = recordsForPartition.filter { rec =>
-                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, parse(rec.json.toString()).asInstanceOf[JObject])
+                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json.asInstanceOf[JObject])
                 extractedValueOption.exists(filterVals.contains)
               }
               filteredRecords

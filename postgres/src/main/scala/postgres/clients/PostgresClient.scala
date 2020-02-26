@@ -66,7 +66,6 @@ trait UsingPostgres {
   implicit val dataSource = createDataSource
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
-
     val tableNames = Set(coreTableName)
     val tableNamesWithPartition =
       tableNames.map(tableName => (tableName, tableNameForPartition(tableName, partitionName))).toMap
