@@ -138,6 +138,13 @@ trait StreamLoaderApp extends App {
           new NsqSink(streamConfig.host, streamConfig.port, config.streams.outStreamName)
         case _ => throw new RuntimeException("No Nsq configuration to be used for bad stream")
       }
+    case "kafka" =>
+      config.queueConfig match {
+        case streamConfig: Kafka =>
+          new KafkaSink(config.kafka.get.broker,config.kafka.get.badProducerTopic)
+        case _ => throw new RuntimeException("No Nsq configuration to be used for bad stream")
+      }
+
     case "none" => new NullSink
     case "kinesis" =>
       config.queueConfig match {
@@ -181,6 +188,7 @@ trait StreamLoaderApp extends App {
           case "stdin"   => System.exit(1)
           // do anything
           case "nsq" =>
+          case "kafka"=>
         }
       }
     )

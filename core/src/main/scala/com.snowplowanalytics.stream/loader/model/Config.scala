@@ -41,6 +41,12 @@ package Config {
     port: Int,
     lookupPort: Int
   ) extends QueueConfig
+  final case class Kafka(
+                          broker: String,
+                          groupId: String,
+                          consumeTopic: String,
+                          badProducerTopic:String
+                        ) extends QueueConfig
   final case class Kinesis(
     initialPosition: String,
     initialTimestamp: Option[String],
@@ -88,6 +94,7 @@ package Config {
     maxRetries: Int,
     ssl: Boolean
   )
+
   case class ESAWSConfig(signing: Boolean, region: String)
   case class ESClusterConfig(
     name: String,
@@ -149,6 +156,7 @@ package Config {
     postgres: Option[PostgresConfig],
     elasticsearch: Option[ESConfig],
     s3: Option[S3Config],
+    kafka:Option[Kafka],
     kinesis: Option[KinesisConfig],
     monitoring: Option[MonitoringConfig],
     mappingTable: Option[Map[String, String]],

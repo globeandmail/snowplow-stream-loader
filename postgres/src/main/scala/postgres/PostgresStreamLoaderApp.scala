@@ -16,17 +16,18 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package loader
+package postgres
 
 import clients.{BulkSender, BulkSenderPostgres}
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import executors.KinesisSourceExecutor
-import model.Config.Kinesis
+import model.Config.{Kafka, Kinesis}
 import pipelines.KinesisPipeline
 import java.io.File
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.snowplowanalytics.stream.loader.executors.{KafkaSourceExecutor, KinesisSourceExecutor}
+import loader.StreamLoaderApp
 
 import scala.io.Source
 
@@ -35,7 +36,7 @@ import scalaz._
 import Scalaz._
 
 /** Main entry point for the Postgres sink */
-object PostgresStreamLoaderApp extends App with StreamLoaderApp {
+object PostgresStreamLoaderApp extends StreamLoaderApp {
   override lazy val arguments = args
 
   lazy val bulkSender: BulkSender[EmitterJsonInput] = config.postgres match {
@@ -75,8 +76,9 @@ object PostgresStreamLoaderApp extends App with StreamLoaderApp {
 
       val deduplicationField = config.deduplicationCache match {
         case Some(dcs) => dcs.deduplicationField
-        case None      => null
+        case None => null
       }
+      println(config.postgres.get.password)
 
       new BulkSenderPostgres(
         config.postgres.get.server,
@@ -121,10 +123,21 @@ object PostgresStreamLoaderApp extends App with StreamLoaderApp {
           ).success
         case _ => "you cannot select kinesis and then have others".failure
       }
+    case "kafka" =>
+      config.queueConfig match {
+        case queueConfig: Kafka =>
+          new KafkaSourceExecutor(config.streamType,
+            goodSink,
+            badSink,
+            bulkSender,
+            queueConfig,
+            config.postgres.get.shardTableDateField,
+            config.postgres.get.shardTableDateFormat,
+            config).success
 
-    case _ => "Source must be set to 'stdin', 'kinesis' or 'nsq'".failure
+        case _ => "Source must be set to 'stdin', 'kinesis' or 'nsq'".failure
+      }
+
   }
-
   run()
-
 }

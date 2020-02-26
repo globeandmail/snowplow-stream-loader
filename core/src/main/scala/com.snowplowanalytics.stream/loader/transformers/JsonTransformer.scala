@@ -27,7 +27,7 @@ import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecor
 import model.JsonRecord
 import org.joda.time.{DateTime, DateTimeZone}
 import org.slf4j.LoggerFactory
-import transformers.StdinTransformer
+import eventTransformers.StdinTransformer
 import utils.JsonUtils
 
 // Amazon
@@ -110,7 +110,7 @@ class JsonTransformer(
                   documentIndexSuffixField + " has null value, so we cannot extract the value"
                 )
             }
-            JsonRecord(json.asInstanceOf[JObject], indexWithDateSuffix).success
+            JsonRecord(json.asInstanceOf[JObject], Some(indexWithDateSuffix)).success
           case None =>
             JsonRecord(json.asInstanceOf[JObject], null).success
         }

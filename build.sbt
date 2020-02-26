@@ -35,7 +35,9 @@ lazy val commonDependencies = Seq(
   Dependencies.Libraries.awsCore,
  // Dependencies.Libraries.json4sJackson,
   // Scala (test only)
-  Dependencies.Libraries.specs2
+  Dependencies.Libraries.specs2,
+  Dependencies.Libraries.kafka,
+  Dependencies.Libraries.kafkaClient
 )
 
 lazy val buildSettings = Seq(
@@ -102,3 +104,6 @@ lazy val s3 = project
     )
   )
   .dependsOn(core)
+
+trapExit := false
+fork in run := true

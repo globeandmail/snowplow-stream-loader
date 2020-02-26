@@ -198,7 +198,7 @@ trait UsingS3Parquet {
    * @param records   to be written
    * @return failures
    */
-  def write(partition: String, records: List[JsonNode]): Array[Int] = {
+  def write(partition: Option[String], records: List[JsonNode]): Array[Int] = {
     val path = (partitionDateField, partition) match {
       case (Some(partitionDateFieldValue), partitionValue) => s"/$partitionDateFieldValue=$partitionValue/"
       case (None, null)                                    => "/"

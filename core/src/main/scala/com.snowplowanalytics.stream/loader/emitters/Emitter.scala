@@ -83,31 +83,45 @@ class Emitter(
     } else {
       val (validRecords: SList[EmitterJsonInput], invalidRecords: SList[EmitterJsonInput]) =
         records.asScala.toList.partition(_._2.isSuccess)
-      // Send all valid records to stdout / Elasticsearch and return those rejected by Elasticsearch
+      // Send all valid records to stdout / Sink and return those rejected by it
       val rejects = goodSink match {
-        case Some(s: StdouterrSink) => {
-          validRecords.foreach(
-            recordTuple => recordTuple.map(record => record.map(r => s.store(r.json.toString, None, true)))
-          )
-          Nil
-        }
-
-        case Some(s: KinesisSink) => {
-          // used for Kinesis mirroring
-          val tsvWithJson = validRecords.map {
-            case (tsv, json) => (tsv, json.toEither.right.getOrElse(JsonRecord(JObject(), "")).json)
+        case Some(s) =>
+          validRecords.foreach {
+            case (_, record) => record.map(r => s.store(r.json.toString, None, true))
           }
-          val value =
-            s.store(tsvWithJson, None, true)
-          Thread.sleep(WAIT_TIME)
           Nil
-        }
-
         case None if validRecords.isEmpty => Nil
         case _                            => emit(validRecords)
       }
-
       (invalidRecords ++ rejects).asJava
+
+//      val (validRecords: SList[EmitterJsonInput], invalidRecords: SList[EmitterJsonInput]) =
+//        records.asScala.toList.partition(_._2.isSuccess)
+//      // Send all valid records to stdout / Elasticsearch and return those rejected by Elasticsearch
+//      val rejects = goodSink match {
+//        case Some(s: StdouterrSink) => {
+//          validRecords.foreach(
+//            recordTuple => recordTuple.map(record => record.map(r => s.store(r.json.toString, None, true)))
+//          )
+//          Nil
+//        }
+//
+//        case Some(s: KinesisSink) => {
+//          // used for Kinesis mirroring
+//          val tsvWithJson = validRecords.map {
+//            case (tsv, json) => (tsv, json.toEither.right.getOrElse(JsonRecord(JObject(), Some(""))).json)
+//          }
+//          val value =
+//            s.store(tsvWithJson, None, true)
+//          Thread.sleep(WAIT_TIME)
+//          Nil
+//        }
+//
+//        case None if validRecords.isEmpty => Nil
+//        case _                            => emit(validRecords)
+//      }
+//
+//      (invalidRecords ++ rejects).asJava
     }
 
   /**

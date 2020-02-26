@@ -78,7 +78,7 @@ trait UsingPostgres {
       connection.setAutoCommit(false)
       jsonRecords
         .map { jsonRecord =>
-          createParentTableQueries(jsonRecord.json.values, tableNamesWithPartition)
+          createParentTableQueries(jsonRecord.json.extract[Map[String, Any]], tableNamesWithPartition)
         }
         .map { statement =>
           try {

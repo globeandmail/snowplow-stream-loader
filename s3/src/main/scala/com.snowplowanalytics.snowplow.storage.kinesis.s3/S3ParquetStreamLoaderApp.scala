@@ -19,18 +19,16 @@
 package loader
 
 import clients.{BulkSender, BulkSenderS3Parquet}
+import com.snowplowanalytics.stream.loader.executors.KinesisSourceExecutor
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import executors.KinesisSourceExecutor
-import loader.StreamLoaderApp
 import model.Config.Kinesis
 import pipelines.KinesisPipeline
 
 // Scalaz
 import scalaz.Scalaz._
-import scalaz._
 
 /** Main entry point for the Postgres sink */
-object S3ParquetStreamLoaderApp extends App with StreamLoaderApp {
+object S3ParquetStreamLoaderApp extends StreamLoaderApp {
   override lazy val arguments = args
 
   lazy val bulkSender: BulkSender[EmitterJsonInput] = config.s3 match {

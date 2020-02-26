@@ -47,6 +47,7 @@ object Dependencies {
     val igluCore         = "0.2.0"
     // Scala (test only)
     val specs2           = "4.1.0" //"3.9.2"
+    val kafkaV           ="2.0.0"
   }
 
   object Libraries {
@@ -89,5 +90,7 @@ object Dependencies {
     // Scala (test only)
     val specs2           = "org.specs2"              %% "specs2-core"                  % V.specs2       % "test"
     val elastic4sTest    = "com.sksamuel.elastic4s"  %% "elastic4s-embedded"           % V.elastic4s    % "test"
+    val kafka            =  "org.apache.kafka"                %% "kafka"                        % V.kafkaV
+    val kafkaClient      =  "org.apache.kafka"                % "kafka-clients"                  % V.kafkaV
   }
 }

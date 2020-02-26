@@ -16,11 +16,12 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package loader
+package elasticsearch
 
 import clients.{BulkSender, BulkSenderHTTP}
+import com.snowplowanalytics.stream.loader.executors.KinesisSourceExecutor
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import executors.KinesisSourceExecutor
+import loader.StreamLoaderApp
 import model.Config.Kinesis
 import pipelines.KinesisPipeline
 import utils.CredentialsLookup

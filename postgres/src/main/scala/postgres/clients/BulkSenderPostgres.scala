@@ -19,6 +19,7 @@ import model.JsonRecord
 import scalaz._
 import Scalaz._
 import org.json4s.JsonAST.JObject
+import org.json4s.jackson.JsonMethods.parse
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -94,7 +95,7 @@ class BulkSenderPostgres(
           {
             if (filterVals.nonEmpty) {
               val filteredRecords = recordsForPartition.filter { rec =>
-                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
+                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, parse(rec.json.toString()).asInstanceOf[JObject])
                 extractedValueOption.exists(filterVals.contains)
               }
               filteredRecords
@@ -103,7 +104,7 @@ class BulkSenderPostgres(
         }
         .filter(_._2.nonEmpty)
         .map {
-          case (partitionName, recordsForPartition) =>
+          case (Some(partitionName), recordsForPartition) =>
             futureToTask(Future { write(partitionName, recordsForPartition) })
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
