@@ -23,7 +23,7 @@ package com.snowplowanalytics.stream.loader.transformers.eventTransformers
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 import com.snowplowanalytics.stream.loader._
-import _root_.model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8

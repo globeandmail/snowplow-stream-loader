@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat
 import java.util.TimeZone
 
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.joda.time.{DateTime, DateTimeZone}
 import org.slf4j.{Logger, LoggerFactory}
 import eventTransformers.StdinTransformer

@@ -1,4 +1,6 @@
 
+package com.snowplowanalytics.stream.loader.transformers.eventTransformers
+
 /**
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -17,14 +19,13 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader.transformers.eventTransformers
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.UUID
 
 import com.snowplowanalytics.stream.loader._
-import _root_.model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 
 // Amazon
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer

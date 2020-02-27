@@ -24,9 +24,9 @@ import java.io.File
 
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
-import model.Config._
+import com.snowplowanalytics.stream.loader.model.Config._
 import scopt.OptionParser
-import sinks._
+import com.snowplowanalytics.stream.loader.sinks._
 import utils.{CredentialsLookup, SnowplowTracking}
 
 // Config

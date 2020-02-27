@@ -1,5 +1,5 @@
 
-package clients
+package com.snowplowanalytics.stream.loader.elasticsearch.clients
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd. All rights reserved.
  *
@@ -17,6 +17,7 @@ package clients
 // Java
 import java.util.Base64
 
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import org.slf4j.Logger
 
 // Scala
@@ -26,7 +27,7 @@ import com.google.common.io.BaseEncoding
 import com.sksamuel.elastic4s.mappings.MappingDefinition
 import com.snowplowanalytics.snowplow.CollectorPayload.thrift.model1.CollectorPayload
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
-import model.Config.{Bad, StreamType}
+import com.snowplowanalytics.stream.loader.model.Config.{Bad, StreamType}
 import org.apache.http.{Header, HttpHost}
 import org.apache.http.message.BasicHeader
 import org.apache.thrift.TDeserializer

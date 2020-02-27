@@ -22,7 +22,7 @@ package utils
 import com.snowplowanalytics.iglu.core.{SchemaKey, SelfDescribingData}
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncBatchEmitter
-import model.Config.SnowplowMonitoringConfig
+import com.snowplowanalytics.stream.loader.model.Config.SnowplowMonitoringConfig
 import org.json4s.JsonDSL._
 import org.json4s._
 

@@ -1,4 +1,4 @@
-package clients
+package postgres.clients
 
 import org.apache.commons.dbcp2.BasicDataSource
 import java.sql.{Connection, PreparedStatement, SQLException, Statement}
@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat
 import java.time.temporal.ChronoUnit
 import java.util.{Date, TimeZone}
 
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.postgresql.util.{PGobject, PSQLException}
 import org.slf4j.LoggerFactory
 

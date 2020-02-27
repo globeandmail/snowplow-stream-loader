@@ -1,8 +1,8 @@
 
-package clients
+package com.snowplowanalytics.snowplow.storage.kinesis.s3.clients
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData

@@ -20,19 +20,17 @@
 package com.snowplowanalytics.stream.loader.transformers.eventTransformers
 
 // Amazon
-import java.util.TimeZone
 
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import scalaz.Scalaz._
 import scalaz._
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
 import java.text.SimpleDateFormat
-import java.util.TimeZone
 
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -49,12 +47,12 @@ import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer._
  *
  */
 class EnrichedEventJsonTransformer(shardDateField: Option[String], shardDateFormat: Option[String])
-    extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
+  extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
   private val dateFormatter: Option[SimpleDateFormat] = shardDateFormat match {
     case Some(format) => new SimpleDateFormat(format).some
-    case _            => None
+    case _ => None
   }
 
   private val shardingField = shardDateField.getOrElse("derived_tstamp")
@@ -88,7 +86,7 @@ class EnrichedEventJsonTransformer(shardDateField: Option[String], shardDateForm
         .replace("\\u0000", "") // arc sends events with null character and postgres doesn't like it.
         .split("\t", -1)) match {
       case Left(h :: t) => NonEmptyList(h, t: _*).failure
-      case Left(Nil)    => "Empty list of failures but reported failure, should not happen".failureNel
+      case Left(Nil) => "Empty list of failures but reported failure, should not happen".failureNel
       case Right((_, json)) =>
 
         dateFormatter match {

@@ -16,7 +16,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package clients
+package com.snowplowanalytics.stream.loader.elasticsearch.clients
 
 // java
 import java.time.{LocalDateTime, ZoneId}

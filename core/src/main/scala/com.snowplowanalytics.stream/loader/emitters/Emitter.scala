@@ -17,13 +17,13 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package emitter
+package com.snowplowanalytics.stream.loader.emitter
 
-import clients.BulkSender
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
-import model.BadRow
+import com.snowplowanalytics.stream.loader.model.BadRow
 
 import scala.collection.mutable.{Buffer => SMBuffer}
 
@@ -35,7 +35,7 @@ import java.util.List
 import scalaz._
 
 // Scala
-import sinks.ISink
+import com.snowplowanalytics.stream.loader.sinks.ISink
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{List => SList}

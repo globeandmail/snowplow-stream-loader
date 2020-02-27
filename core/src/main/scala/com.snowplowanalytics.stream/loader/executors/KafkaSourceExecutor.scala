@@ -9,11 +9,11 @@ import java.util.Properties
 import java.util.concurrent.Executors
 
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
-import clients.BulkSender
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.snowplowanalytics.stream.loader.transformers.eventTransformers._
-import emitter.Emitter
-import model.Config._
+import com.snowplowanalytics.stream.loader.emitter.Emitter
+import com.snowplowanalytics.stream.loader.model.Config._
 import model.JsonRecord
 import scalaz.ValidationNel
 import sinks.ISink
@@ -67,11 +67,11 @@ class KafkaSourceExecutor(streamType: StreamType,
 
   override def run(): Unit = {
 
-    val Thousand: Int = 1000
     consumer.subscribe(util.Arrays.asList(kafka.consumeTopic))
     Executors.newSingleThreadExecutor.execute(new Runnable {
       override def run(): Unit = {
         while (true) {
+          val Thousand = 1000
           val record = consumer.poll(Duration.ofMillis(Thousand)).asScala
           for (data <- record.iterator)
             msgBuffer.synchronized {

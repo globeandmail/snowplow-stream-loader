@@ -23,7 +23,7 @@ package transformers
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.json4s.JsonAST.JObject
 
 // Amazon

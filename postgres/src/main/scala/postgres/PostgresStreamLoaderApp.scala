@@ -18,12 +18,12 @@
  */
 package postgres
 
-import clients.{BulkSender, BulkSenderPostgres}
+import com.snowplowanalytics.stream.loader.clients.{BulkSender}
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.Config.{Kafka, Kinesis}
-import pipelines.KinesisPipeline
+import com.snowplowanalytics.stream.loader.model.Config.{Kafka, Kinesis}
+import com.snowplowanalytics.stream.loader.pipelines.KinesisPipeline
 import java.io.File
-
+import postgres.clients._
 import scala.concurrent.duration._
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.snowplowanalytics.stream.loader.executors.{KafkaSourceExecutor, KinesisSourceExecutor}

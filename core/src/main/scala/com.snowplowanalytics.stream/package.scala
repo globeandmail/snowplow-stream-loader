@@ -21,7 +21,7 @@ package com.snowplowanalytics.stream
 
 // Amazon
 
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 
 // Scalaz
 import scalaz._

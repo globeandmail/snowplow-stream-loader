@@ -17,7 +17,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package model
+package com.snowplowanalytics.stream.loader.model
 
 import java.text.SimpleDateFormat
 

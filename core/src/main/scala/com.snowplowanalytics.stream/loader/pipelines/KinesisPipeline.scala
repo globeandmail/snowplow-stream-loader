@@ -17,20 +17,20 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package pipelines
+package com.snowplowanalytics.stream.loader.pipelines
 
-import clients.BulkSender
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 import com.amazonaws.services.kinesis.connectors.interfaces.{IEmitter, IKinesisConnectorPipeline, ITransformerBase}
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.stream.loader.transformers.JsonTransformer
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import emitter.Emitter
-import model.Config.{Bad, Good, PlainJson, StreamType}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.emitter.Emitter
+import com.snowplowanalytics.stream.loader.model.Config.{Bad, Good, PlainJson, StreamType}
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import scalaz.ValidationNel
-import sinks.ISink
+import com.snowplowanalytics.stream.loader.sinks.ISink
 import transformers.{BadEventTransformer, PlainJsonTransformer}
 
 /**

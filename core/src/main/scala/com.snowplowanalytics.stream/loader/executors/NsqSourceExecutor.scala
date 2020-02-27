@@ -21,10 +21,10 @@ package com.snowplowanalytics.stream.loader.executors
 package executors
 
 // NSQ
-import clients.BulkSender
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
-import model.Config._
-import sinks.ISink
+import com.snowplowanalytics.stream.loader.model.Config._
+import com.snowplowanalytics.stream.loader.sinks.ISink
 
 // Logging
 import org.slf4j.LoggerFactory
