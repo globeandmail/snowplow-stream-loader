@@ -148,7 +148,7 @@ trait StreamLoaderApp extends App {
       config.queueConfig match {
         case streamConfig: Kafka =>
           new KafkaSink(config.kafka.get.broker,config.kafka.get.badProducerTopic)
-        case _ => throw new RuntimeException("No Nsq configuration to be used for bad stream")
+        case _ => throw new RuntimeException("No kafka configuration to be used for bad stream")
       }
 
     case "none" => new NullSink

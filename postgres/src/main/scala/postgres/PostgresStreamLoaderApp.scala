@@ -137,7 +137,7 @@ object PostgresStreamLoaderApp extends StreamLoaderApp {
             config.postgres.get.shardTableDateFormat,
             config).success
 
-        case _ => "Source must be set to 'stdin', 'kinesis' or 'nsq'".failure
+        case _ => "Source must be set to 'stdin', 'kinesis', 'kafka' or 'nsq'".failure
       }
 
   }
