@@ -60,6 +60,9 @@ class Emitter(
                bufferByteLimit: Long
              ) extends IEmitter[EmitterJsonInput] {
 
+  val isTrue = true
+  val isFalse = false
+
   @throws[IOException]
   def emit(buffer: UnmodifiableBuffer[EmitterJsonInput]): List[EmitterJsonInput] =
     attemptEmit(buffer.getRecords)
@@ -73,7 +76,7 @@ class Emitter(
    * @return list of inputs which failed transformation or which Elasticsearch rejected
    */
   @throws[IOException]
-  def attemptEmit(records: List[EmitterJsonInput]): List[EmitterJsonInput] =
+  def attemptEmit(records: List[EmitterJsonInput]): List[EmitterJsonInput] = {
     if (records.asScala.isEmpty) {
       null
     } else {
@@ -83,7 +86,7 @@ class Emitter(
       val rejects = goodSink match {
         case Some(s) =>
           validRecords.foreach {
-            case (_, record) => record.map(r => s.store(r.json.toString, None, true))
+            case (_, record) => record.map(r => s.store(r.json.toString, None, isTrue))
           }
           Nil
         case None if validRecords.isEmpty => Nil
@@ -92,6 +95,7 @@ class Emitter(
       (invalidRecords ++ rejects).asJava
 
     }
+  }
 
   /**
    * Emits good records to Elasticsearch and bad records to Kinesis.
@@ -158,7 +162,7 @@ class Emitter(
   /**
    * Closes the Elasticsearch client when the KinesisConnectorRecordProcessor is shut down
    */
-  def shutdown(): Unit = bulkSender.close
+  def shutdown(): Unit = bulkSender.close()
 
   /**
    * Handles records rejected by the ElasticsearchTransformer or by Elasticsearch
@@ -167,12 +171,10 @@ class Emitter(
    */
   def fail(records: List[EmitterJsonInput]): Unit =
     records.asScala.foreach {
-      _ match {
-        case (r: String, Failure(fs)) =>
-          val output = BadRow(r, fs).toCompactJson
-          badSink.store(output, None, false)
-        case (_, Success(_)) => ()
-      }
+      case (r: String, Failure(fs)) =>
+        val output = BadRow(r, fs).toCompactJson
+        badSink.store(output, None, isFalse)
+      case (_, Success(_)) => ()
     }
 
 }
