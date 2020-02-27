@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd. All rights reserved.
  *
@@ -72,7 +73,9 @@ class BulkSenderS3Parquet(
         })
         .flatten
         .toList
-    } else Nil
+    } else {
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records")
     if (newFailures.nonEmpty) logHealth()

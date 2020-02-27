@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -21,12 +22,14 @@ package pipelines
 import clients.BulkSender
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
-import com.amazonaws.services.kinesis.connectors.interfaces.{IEmitter, IKinesisConnectorPipeline}
+import com.amazonaws.services.kinesis.connectors.interfaces.{IEmitter, IKinesisConnectorPipeline, ITransformerBase}
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.stream.loader.transformers.JsonTransformer
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
 import emitter.Emitter
 import model.Config.{Bad, Good, PlainJson, StreamType}
+import model.JsonRecord
+import scalaz.ValidationNel
 import sinks.ISink
 import transformers.{BadEventTransformer, PlainJsonTransformer}
 
@@ -59,10 +62,11 @@ class KinesisPipeline(
   override def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterJsonInput] =
     new Emitter(bulkSender, goodSink, badSink, bufferRecordLimit, bufferByteLimit)
 
-  override def getBuffer(configuration: KinesisConnectorConfiguration) =
+  override def getBuffer(configuration: KinesisConnectorConfiguration): BasicMemoryBuffer[(String, ValidationNel[String, JsonRecord])] =
     new BasicMemoryBuffer[ValidatedJsonRecord](configuration)
 
-  override def getTransformer(c: KinesisConnectorConfiguration) = streamType match {
+  override def getTransformer(c: KinesisConnectorConfiguration): ITransformerBase[(String, ValidationNel[String, JsonRecord]),
+    (String, ValidationNel[String, JsonRecord])] = streamType match {
     case Good =>
       new JsonTransformer(
         documentIndexOrPrefix,
@@ -85,5 +89,6 @@ class KinesisPipeline(
       )
   }
 
-  override def getFilter(c: KinesisConnectorConfiguration) = new AllPassFilter[ValidatedJsonRecord]()
+  override def getFilter(c: KinesisConnectorConfiguration): AllPassFilter[(String, ValidationNel[String, JsonRecord])]
+  = new AllPassFilter[ValidatedJsonRecord]()
 }

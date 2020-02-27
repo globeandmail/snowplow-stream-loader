@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.

@@ -1,3 +1,5 @@
+
+package loader
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -16,7 +18,6 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package loader
 
 // Java
 import java.io.File
@@ -33,7 +34,6 @@ import com.typesafe.config.ConfigFactory
 
 // Scalaz
 import scalaz._
-import Scalaz._
 
 // Pureconfig
 import pureconfig._
@@ -59,8 +59,12 @@ trait StreamLoaderApp extends App {
         .action((f: File, c: FileConfig) => c.copy(config = f))
         .validate(
           f =>
-            if (f.exists) success
-            else failure(s"Configurationfile $f does not exist")
+            if (f.exists) {
+              success
+            }
+            else {
+              failure(s"Configurationfile $f does not exist")
+            }
         )
     }
 
@@ -70,17 +74,17 @@ trait StreamLoaderApp extends App {
     }
 
     if (config.isEmpty()) {
-      System.err.println("Empty configuration file")
+      System.err.print("Empty configuration file")
       System.exit(1)
     }
 
-    implicit def hint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+    implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
 
-    implicit val queueConfigHint = new FieldCoproductHint[QueueConfig]("enabled")
+    implicit val queueConfigHint: FieldCoproductHint[QueueConfig] = new FieldCoproductHint[QueueConfig]("enabled")
 
     val streamLoaderConf = loadConfig[StreamLoaderConfig](config) match {
       case Left(e) =>
-        System.err.println(s"configuration error: $e")
+        System.err.print(s"configuration error: $e")
         System.exit(1)
         None
       case Right(c) => Some(c)

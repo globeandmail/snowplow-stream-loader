@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -21,21 +22,9 @@ package executors
 
 // NSQ
 import clients.BulkSender
-import com.amazonaws.services.kinesis.connectors.elasticsearch.{ElasticsearchEmitter}
-import com.snowplowanalytics.client.nsq.{NSQConfig, NSQConsumer, NSQMessage}
-import com.snowplowanalytics.client.nsq.callbacks.{NSQErrorCallback, NSQMessageCallback}
-import com.snowplowanalytics.client.nsq.exceptions.NSQException
-import com.snowplowanalytics.client.nsq.lookup.DefaultNSQLookup
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
 import model.Config._
 import sinks.ISink
-import transformers.{BadEventTransformer, PlainJsonTransformer}
-
-//Java
-import java.nio.charset.StandardCharsets.UTF_8
-
-// Scala
-import scala.collection.mutable.ListBuffer
 
 // Logging
 import org.slf4j.LoggerFactory
@@ -64,13 +53,6 @@ class NsqSourceExecutor(
 ) extends Runnable {
 
   lazy val log = LoggerFactory.getLogger(getClass())
-
-  // nsq messages will be buffered in msgBuffer until buffer size become equal to nsqBufferSize
-  private val msgBuffer = new ListBuffer[EmitterJsonInput]()
-  // ElasticsearchEmitter instance
-
-  private val topicName = config.streams.inStreamName
-  //private val channelName = config.queueConfig.channelName
 
   /**
    * Consumer will be started to wait new message.

@@ -1,9 +1,9 @@
+
 package sinks
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Properties
 
-import model.Config.Kafka
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.util.Random

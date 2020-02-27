@@ -19,7 +19,6 @@ import model.JsonRecord
 import scalaz._
 import Scalaz._
 import org.json4s.JsonAST.JObject
-import org.json4s.jackson.JsonMethods.parse
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -99,7 +98,9 @@ class BulkSenderPostgres(
                 extractedValueOption.exists(filterVals.contains)
               }
               filteredRecords
-            } else recordsForPartition
+            } else {
+              recordsForPartition
+            }
           }
         }
         .filter(_._2.nonEmpty)
@@ -131,7 +132,9 @@ class BulkSenderPostgres(
         }
         .flatten
         .toList
-    } else Nil
+    } else{
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored")
     if (newFailures.nonEmpty) logHealth()

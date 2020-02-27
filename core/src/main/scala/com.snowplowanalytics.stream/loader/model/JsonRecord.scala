@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -19,7 +20,6 @@
 package model
 
 import org.json4s.JValue
-import org.json4s.JsonAST.JObject
 
 /**
  * Format in which Snowplow events are buffered

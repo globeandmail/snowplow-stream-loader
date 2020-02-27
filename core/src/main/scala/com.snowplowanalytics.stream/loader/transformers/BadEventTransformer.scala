@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -35,7 +36,6 @@ import org.json4s.jackson.JsonMethods._
 
 // Scalaz
 import scalaz.Scalaz._
-//import scalaz._
 
 // TODO consider giving BadEventTransformer its own types
 
