@@ -1,4 +1,6 @@
-
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 package com.snowplowanalytics.stream.loader
 package executors
 

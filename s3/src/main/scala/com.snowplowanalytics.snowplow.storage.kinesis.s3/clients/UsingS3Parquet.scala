@@ -1,4 +1,6 @@
-
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 package com.snowplowanalytics.snowplow.storage.kinesis.s3.clients
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode}

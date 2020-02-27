@@ -1,4 +1,9 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package com.snowplowanalytics.stream.loader.elasticsearch
 /**
+ * © Copyright 2020 The Globe and Mail
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -16,7 +21,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader.elasticsearch
+
 
 import clients.BulkSenderHTTP
 import com.snowplowanalytics.stream.loader.clients.BulkSender

@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 package postgres.clients
 
 import org.apache.commons.dbcp2.BasicDataSource

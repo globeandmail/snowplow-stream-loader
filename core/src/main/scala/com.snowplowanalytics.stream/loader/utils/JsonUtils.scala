@@ -1,4 +1,7 @@
 /*
+ * © Copyright 2020 The Globe and Mail
+ */
+/*
  * Copyright (c) 2013-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
