@@ -1,4 +1,7 @@
-package sinks
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package com.snowplowanalytics.stream.loader.sinks
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Properties

@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -16,7 +19,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package sinks
+package com.snowplowanalytics.stream.loader.sinks
 
 /**
  * Shared interface for all sinks

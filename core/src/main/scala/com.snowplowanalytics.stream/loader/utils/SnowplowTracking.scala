@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -22,7 +25,7 @@ package utils
 import com.snowplowanalytics.iglu.core.{SchemaKey, SelfDescribingData}
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncBatchEmitter
-import model.Config.SnowplowMonitoringConfig
+import com.snowplowanalytics.stream.loader.model.Config.SnowplowMonitoringConfig
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -34,6 +37,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SnowplowTracking {
 
   private val HeartbeatInterval = 300000L // TODO: add it to the config
+  private val ThirtyTwo = 32
   /**
    * Configure a Tracker based on the configuration HOCON
    *
@@ -46,7 +50,7 @@ object SnowplowTracking {
     val appName  = config.appId
     // Not yet used
     val method  = config.method // TODO: use it somehow!!
-    val emitter = AsyncBatchEmitter.createAndStart(endpoint, port, bufferSize = 32) // TODO: add buffer to the config, buffer is with post though
+    val emitter = AsyncBatchEmitter.createAndStart(endpoint, port, bufferSize = ThirtyTwo) // TODO: add buffer to the config, buffer is with post though
     new Tracker(List(emitter), appName, appName)
   }
 

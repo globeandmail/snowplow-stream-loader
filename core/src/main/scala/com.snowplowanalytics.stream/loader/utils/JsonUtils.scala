@@ -1,4 +1,7 @@
 /*
+ * © Copyright 2020 The Globe and Mail
+ */
+/*
  * Copyright (c) 2013-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -20,18 +23,17 @@ package utils
 
 import java.util.regex.Pattern
 
+import org.json4s.JsonAST._
 import org.json4s.{DefaultFormats, Formats, JObject}
-import org.json4s.JsonAST.{JArray, JField, JNothing, JNull, JString, JValue}
 
 // Scalaz
 import scalaz.Scalaz._
-import scalaz._
 
 import scala.util.{Failure, Success, Try}
 
 object JsonUtils {
   implicit val formats = DefaultFormats
-  val xpathPattern     = Pattern.compile("([A-Za-z0-9_]+)[\\[]*([0-9]*)[\\]]*")
+  val xpathPattern = Pattern.compile("([A-Za-z0-9_]+)[\\[]*([0-9]*)[\\]]*")
 
   // to rm once 2.12 as well as the right projections
   def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B = t match {
@@ -57,11 +59,12 @@ object JsonUtils {
   def extractField(json: JValue, fieldName: String): Option[String] =
     json \ fieldName match {
       case JString(eid) => eid.some
-      case _            => None
+      case _ => None
     }
 
   /**
    * rename a field
+   *
    * @param json object produced by the Snowplow Analytics SDK
    * @return Option boxing event_id
    */
@@ -73,7 +76,7 @@ object JsonUtils {
           case (from, s) =>
             mapping.get(from) match {
               case Some(mappedValue) => (mappedValue, s)
-              case None              => (from, s)
+              case None => (from, s)
             }
         }
     }
@@ -83,18 +86,8 @@ object JsonUtils {
       case (_, JNull | JNothing) => true
       case (_, JArray(arr)) => arr.isEmpty || arr == List(JObject(List())) || arr == List(JObject())
       case (_, JObject(kv)) => kv.isEmpty
-      case (k, _)           => false
+      case (k, _) => false
     }
-
-  def camelToSnake(name: String) =
-    "[A-Z\\d]".r.replaceAllIn(name, { m =>
-      "_" + m.group(0).toLowerCase()
-    })
-
-  def snakeToCamel(name: String) =
-    "_([a-z\\d])".r.replaceAllIn(name, { m =>
-      m.group(1).toUpperCase()
-    })
 
   def denormalizeEvent(json: JValue): JValue = {
     val deprecatedFields = List(
@@ -233,7 +226,7 @@ object JsonUtils {
       "user_id",
       "domain_userid",
       "domain_sessionid",
-      "contexts_com_globeandmail_content_1[0].contentId",               //camelCase: coming from contexts schema
+      "contexts_com_globeandmail_content_1[0].contentId", //camelCase: coming from contexts schema
       "contexts_com_globeandmail_device_detector_1[0].visitorPlatform", //camelCase: coming from contexts schema
       "refr_medium",
       "page_urlpath",
@@ -280,7 +273,7 @@ object JsonUtils {
                   structuredUnstructFields ++
                   transactionItemsContextsFields ++
                   trasactionUnstuct
-              ).contains(kv._1)
+                ).contains(kv._1)
                 && !kv._1.startsWith("unstruct_")
                 && !kv._1.startsWith("contexts_")
           )
@@ -337,7 +330,18 @@ object JsonUtils {
       result
     }
   }
-  protected[utils] def fieldFromXPath(xpath: String) = {
+
+  def camelToSnake(name: String): String =
+    "[A-Z\\d]".r.replaceAllIn(name, { m =>
+      "_" + m.group(0).toLowerCase()
+    })
+
+  def snakeToCamel(name: String): String =
+    "_([a-z\\d])".r.replaceAllIn(name, { m =>
+      m.group(1).toUpperCase()
+    })
+
+  protected[utils] def fieldFromXPath(xpath: String): String = {
     val matcher = xpathPattern.matcher(xpath.split('.').last)
     if (matcher.find()) {
       matcher.group(1)
@@ -345,10 +349,11 @@ object JsonUtils {
       throw new RuntimeException(s"cannot find fieldName from xpath $xpath")
     }
   }
+
   protected[utils] def extractValueFromXPath[T](
-    json: JValue,
-    xpath: String
-  )(implicit formats: Formats, mf: Manifest[T]) =
+                                                 json: JValue,
+                                                 xpath: String
+                                               )(implicit formats: Formats, mf: Manifest[T]): T =
     xpath
       .split('.')
       .foldLeft(json)(
@@ -357,19 +362,19 @@ object JsonUtils {
           case (acc: JValue, node: String) =>
             val matcher = xpathPattern.matcher(node)
             if (matcher.find()) {
-              val fieldName  = matcher.group(1)
+              val fieldName = matcher.group(1)
               val fieldIndex = matcher.group(2)
               if (fieldIndex == "") {
                 acc \ fieldName
               } else {
-                (acc \ fieldName)(fieldIndex.toInt)
+                (acc \ fieldName) (fieldIndex.toInt)
               }
             } else {
               JNull
             }
         }
       ) match {
-      case JNothing    => JNull.extract[T]
+      case JNothing => JNull.extract[T]
       case acc: JValue => acc.extract[T]
     }
 }

@@ -1,7 +1,10 @@
-package clients
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package com.snowplowanalytics.snowplow.storage.kinesis.s3.clients
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, JsonNode}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData
@@ -10,7 +13,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.AvroParquetWriter
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.kitesdk.data.spi.{JsonUtil, SchemaUtil}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import org.json4s.jackson.JsonMethods._
 
 import scala.collection.JavaConverters._
@@ -20,12 +23,15 @@ import scala.util.{Failure, Success, Try}
  * This class converts Json4s JValue to Jackson JsonNode and then writes to S3 as Parquet
  */
 trait UsingS3Parquet {
-  val log = LoggerFactory.getLogger(getClass)
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val bucket: String
   implicit val accessKey: String
   implicit val secretKey: String
   implicit val partitionDateField: Option[String]
+
+  private val One = 1
+  private val Two = 2
 
   val conf = new Configuration()
   //Based on  https://docs.oracle.com/database/nosql-12.1.3.0/GettingStartedGuide/avroschemas.html
@@ -68,8 +74,12 @@ trait UsingS3Parquet {
         .map(r => JsonUtil.inferSchema(r, "event"))
         .reduceLeft((right, left) => SchemaUtil.merge(right, left))
 
-      if (schema == null) schema = result
-      else schema                = SchemaUtil.mergeOrUnion(List(schema, result).asJava)
+      if (schema == null) {
+        schema = result
+      }
+      else {
+        schema = SchemaUtil.mergeOrUnion(List(schema, result).asJava)
+      }
       schema
     }
   }
@@ -236,10 +246,10 @@ trait UsingS3Parquet {
 
             log.error("error when writing Avro record in Parquet file", exception)
 
-            -2 // parquet writer issue
+            -Two // parquet writer issue
         }
       } else {
-        -1 // schema issue
+        -One // schema issue
       }
 
     }

@@ -1,4 +1,7 @@
-package clients
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package postgres.clients
 
 import org.apache.commons.dbcp2.BasicDataSource
 import java.sql.{Connection, PreparedStatement, SQLException, Statement,Types}
@@ -8,7 +11,7 @@ import java.text.SimpleDateFormat
 import java.time.temporal.ChronoUnit
 import java.util.{Date, TimeZone}
 
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.postgresql.util.{PGobject, PSQLException}
 import org.slf4j.LoggerFactory
 
@@ -88,8 +91,9 @@ trait UsingPostgres {
           } catch {
             case ex: SQLException =>
               connection.rollback()
-              if (!connection.getAutoCommit)
+              if (!connection.getAutoCommit) {
                 connection.setAutoCommit(true)
+              }
               //cleaning table cache for retry
               existingTables.clear()
               //log what happened
@@ -105,8 +109,9 @@ trait UsingPostgres {
       } catch {
         case ex: SQLException =>
           connection.rollback()
-          if (!connection.getAutoCommit)
+          if (!connection.getAutoCommit) {
             connection.setAutoCommit(true)
+          }
           //cleaning table cache for retry
           existingTables.clear()
           //log what happened
@@ -209,11 +214,14 @@ trait UsingPostgres {
         .map {
           case (contextEventName: String, contextEventData: List[Map[String, Any]]) =>
             (contextEventName, List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap))
-          // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map. This is either a Scala issue, Snowplow Bug or the library that converted that Json Object to Map.
-          // We get MatchError exception, because filter doesn't work for all of the Map kids. The Library creates Map2, Map3, etc instead of Map
+          // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map.
+          // This is either a Scala issue, Snowplow Bug or the library that converted that Json Object to Map.
+          // We get MatchError exception, because filter doesn't work for all of the Map kids.
+          // The Library creates Map2, Map3, etc instead of Map
           // All of them go through this match/case but not filter
           // Below is an example of the data that turns out to be Map2
-          //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81), Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
+          //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81),
+          // Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
           case (unstructEventName: String, unstructEventData: Map[String, Any]) =>
             (unstructEventName, List(unstructEventData))
           case _ => throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")

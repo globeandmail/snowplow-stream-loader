@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd. All rights reserved.
  *
@@ -10,14 +13,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package clients
+package com.snowplowanalytics.snowplow.storage.kinesis.s3.clients
 
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
 import scalaz._
 import Scalaz._
 import org.slf4j.LoggerFactory
-
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -72,7 +75,9 @@ class BulkSenderS3Parquet(
         })
         .flatten
         .toList
-    } else Nil
+    } else {
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records")
     if (newFailures.nonEmpty) logHealth()

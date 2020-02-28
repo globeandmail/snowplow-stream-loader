@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -21,7 +24,6 @@ package transformers
 // Java
 
 import com.snowplowanalytics.stream.loader.transformers.JsonTransformer
-import model.Config.StreamLoaderConfig
 
 /**
  * Class to convert plain JSON to EmitterInputs

@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -16,7 +19,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package sinks
+package com.snowplowanalytics.stream.loader.sinks
 
 /**
  * Stdout/err sink
@@ -30,10 +33,10 @@ class StdouterrSink extends ISink {
    * @param key Unused parameter which exists to implement ISink
    * @param good Whether to write to stdout or stderr
    */
-  def store(output: String, key: Option[String], good: Boolean) =
+  def store(output: String, key: Option[String], good: Boolean): Unit =
     if (good) {
-      println(output) // To stdout
+      print(output) // To stdout
     } else {
-      Console.err.println(output) // To stderr
+      Console.err.print(output) // To stderr
     }
 }

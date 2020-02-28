@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd. All rights reserved.
  *
@@ -10,16 +13,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package clients
+package postgres.clients
 
 import com.github.blemale.scaffeine.Cache
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import scalaz._
 import Scalaz._
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import org.json4s.JsonAST.JObject
-import org.json4s.jackson.JsonMethods.parse
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -134,7 +137,9 @@ class BulkSenderPostgres(
         }
         .flatten
         .toList
-    } else Nil
+    } else{
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored")
     if (newFailures.nonEmpty) logHealth()

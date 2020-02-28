@@ -1,3 +1,7 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package com.snowplowanalytics.stream.loader.elasticsearch.clients
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd. All rights reserved.
  *
@@ -10,10 +14,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package clients
+
 
 // Java
 import java.util.Base64
+
+import com.snowplowanalytics.stream.loader.clients.BulkSender
+import org.slf4j.Logger
 
 // Scala
 import com.amazonaws.services.kinesis.connectors.elasticsearch.ElasticsearchObject
@@ -22,7 +29,7 @@ import com.google.common.io.BaseEncoding
 import com.sksamuel.elastic4s.mappings.MappingDefinition
 import com.snowplowanalytics.snowplow.CollectorPayload.thrift.model1.CollectorPayload
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
-import model.Config.{Bad, StreamType}
+import com.snowplowanalytics.stream.loader.model.Config.{Bad, StreamType}
 import org.apache.http.{Header, HttpHost}
 import org.apache.http.message.BasicHeader
 import org.apache.thrift.TDeserializer
@@ -76,12 +83,16 @@ class BulkSenderHTTP(
   require(maxAttempts > 0)
   require(maxConnectionWaitTimeMs > 0)
 
-  override val log = LoggerFactory.getLogger(getClass)
+  override val log: Logger = LoggerFactory.getLogger(getClass)
 
   private val uri = ElasticsearchClientUri(s"elasticsearch://$endpoint:$port?ssl=$ssl")
   private val httpClientConfigCallback =
-    if (awsSigning) new SignedHttpClientConfigCallback(credentialsProvider, region)
-    else NoOpHttpClientConfigCallback
+    if (awsSigning) {
+      new SignedHttpClientConfigCallback(credentialsProvider, region)
+    }
+    else {
+      NoOpHttpClientConfigCallback
+    }
 
   private val formedHost =
     new HttpHost(endpoint, port, if (uri.options.getOrElse("ssl", "false") == "true") "https" else "http")
@@ -223,13 +234,14 @@ class BulkSenderHTTP(
     error.foreach(e => log.error(s"Record [$record] failed with message $e"))
     error
       .map { e =>
-        if (e.contains("DocumentAlreadyExistsException") || e.contains("VersionConflictEngineException"))
+        if (e.contains("DocumentAlreadyExistsException") || e.contains("VersionConflictEngineException")) {
           None
-        else
+        } else {
           Some(
             record._1.take(maxSizeWhenReportingFailure) ->
               s"Elasticsearch rejected record with message $e".failureNel
           )
+        }
       }
       .getOrElse(None)
   }

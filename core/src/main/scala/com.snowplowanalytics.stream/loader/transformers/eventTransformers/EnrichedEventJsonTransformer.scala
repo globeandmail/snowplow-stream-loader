@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -19,12 +22,11 @@
 package com.snowplowanalytics.stream.loader.transformers.eventTransformers
 
 // Amazon
-import java.util.TimeZone
 
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.json4s.JObject
 import scalaz.Scalaz._
 import scalaz._
@@ -33,7 +35,6 @@ import utils.JsonUtils
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
 import java.text.SimpleDateFormat
-import java.util.TimeZone
 
 import org.joda.time.{DateTime, DateTimeZone}
 
@@ -57,7 +58,7 @@ class EnrichedEventJsonTransformer(shardDateField: Option[String],
 
   private val dateFormatter: Option[SimpleDateFormat] = shardDateFormat match {
     case Some(format) => new SimpleDateFormat(format).some
-    case _            => None
+    case _ => None
   }
 
   private val shardingField = shardDateField.getOrElse("derived_tstamp")

@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -20,9 +23,7 @@ package utils
 
 // Amazon
 import com.amazonaws.auth._
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest
 
 /**
  * Gets AWS credentials based on configuration YAML

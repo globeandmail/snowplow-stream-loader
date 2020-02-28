@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -24,9 +27,9 @@ import java.text.SimpleDateFormat
 import java.util.TimeZone
 
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.joda.time.{DateTime, DateTimeZone}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import eventTransformers.StdinTransformer
 import utils.JsonUtils
 
@@ -59,7 +62,7 @@ class JsonTransformer(
 ) extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
-  val log           = LoggerFactory.getLogger(getClass)
+  val log: Logger = LoggerFactory.getLogger(getClass)
   val dateFormatter = new SimpleDateFormat(documentIndexSuffixFormat.getOrElse(""))
   dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 

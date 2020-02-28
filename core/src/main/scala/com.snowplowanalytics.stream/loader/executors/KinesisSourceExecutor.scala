@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -24,7 +27,7 @@ import java.util.Properties
 import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline
 import model.Config.{Kinesis, StreamLoaderConfig}
 import utils.CredentialsLookup
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.{
@@ -61,7 +64,7 @@ class KinesisSourceExecutor[A, B](
   kinesisConnectorPipeline: IKinesisConnectorPipeline[A, B]
 ) extends KinesisConnectorExecutorBase[A, B] {
 
-  val LOG                     = LoggerFactory.getLogger(getClass)
+  val LOG: Logger = LoggerFactory.getLogger(getClass)
   val DEFAULT_LEASE_TABLE_RCU = 1
   val DEFAULT_LEASE_TABLE_WCU = 5
 
@@ -177,13 +180,15 @@ class KinesisSourceExecutor[A, B](
 
     if (!kinesisConnectorConfiguration.CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST) {
       LOG.warn(
-        "The false value of callProcessRecordsEvenForEmptyList will be ignored. It must be set to true for the bufferTimeMillisecondsLimit to work correctly."
+        "The false value of callProcessRecordsEvenForEmptyList will be ignored." +
+          " It must be set to true for the bufferTimeMillisecondsLimit to work correctly."
       )
     }
 
     if (kinesisConnectorConfiguration.IDLE_TIME_BETWEEN_READS > kinesisConnectorConfiguration.BUFFER_MILLISECONDS_LIMIT) {
       LOG.warn(
-        "idleTimeBetweenReads is greater than bufferTimeMillisecondsLimit. For best results, ensure that bufferTimeMillisecondsLimit is more than or equal to idleTimeBetweenReads "
+        "idleTimeBetweenReads is greater than bufferTimeMillisecondsLimit. For best results," +
+          " ensure that bufferTimeMillisecondsLimit is more than or equal to idleTimeBetweenReads "
       )
     }
 
@@ -198,7 +203,7 @@ class KinesisSourceExecutor[A, B](
 
   initialize(convertConfig(streamLoaderConfig), null)
 
-  def getKinesisConnectorRecordProcessorFactory =
+  def getKinesisConnectorRecordProcessorFactory: KinesisConnectorRecordProcessorFactory[A, B] =
     new KinesisConnectorRecordProcessorFactory[A, B](kinesisConnectorPipeline, convertConfig(streamLoaderConfig))
 
 }

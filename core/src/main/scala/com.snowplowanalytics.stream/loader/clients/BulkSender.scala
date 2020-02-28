@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2016 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -16,7 +19,9 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package clients
+package com.snowplowanalytics.stream.loader.clients
+
+import java.util.concurrent.ExecutorService
 
 import utils.SnowplowTracking
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -46,7 +51,7 @@ trait BulkSender[A] {
   // it can be sent to a bad sink. This way we don't have to compute the size of the byte
   // representation of the utf-8 string.
   val maxSizeWhenReportingFailure = 20000
-  implicit val strategy           = Strategy.DefaultExecutorService
+  implicit val strategy: ExecutorService = Strategy.DefaultExecutorService
 
   def send(records: List[A]): List[A]
   def close(): Unit
@@ -77,7 +82,7 @@ trait BulkSender[A] {
     }
 
   /** Predicate about whether or not we should retry sending stuff to ES */
-  def exPredicate(connectionStartTime: Long): (Throwable => Boolean) = _ match {
+  def exPredicate(connectionStartTime: Long): (Throwable => Boolean) = {
     case e: Exception =>
       log.error("Datastore threw an unexpected exception ", e)
       tracker foreach { t =>

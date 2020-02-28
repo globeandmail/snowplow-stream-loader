@@ -40,7 +40,7 @@ import scalaz.Scalaz._
 import org.specs2.mutable.Specification
 
 // This project
-import clients.BulkSender
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import sinks._
 
 class MockBulkSender extends BulkSender[EmitterJsonInput] {

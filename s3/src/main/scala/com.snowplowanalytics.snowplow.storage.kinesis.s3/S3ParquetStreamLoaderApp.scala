@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -16,13 +19,15 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package loader
+package com.snowplowanalytics.snowplow.storage.kinesis.s3
 
-import clients.{BulkSender, BulkSenderS3Parquet}
+import com.snowplowanalytics.snowplow.storage.kinesis.s3.clients.BulkSenderS3Parquet
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.snowplowanalytics.stream.loader.executors.KinesisSourceExecutor
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.Config.Kinesis
-import pipelines.KinesisPipeline
+import com.snowplowanalytics.stream.loader.model.Config.Kinesis
+import com.snowplowanalytics.stream.loader.pipelines.KinesisPipeline
+import loader.StreamLoaderApp
 
 // Scalaz
 import scalaz.Scalaz._

@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -19,11 +22,11 @@
 package com.snowplowanalytics.stream
 
 // Amazon
-import model.JsonRecord
+
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 
 // Scalaz
 import scalaz._
-import Scalaz._
 
 // json4s
 import org.json4s._

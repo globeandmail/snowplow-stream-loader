@@ -1,3 +1,6 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 /**
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
@@ -22,7 +25,7 @@ package transformers
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import org.json4s.JsonAST.JObject
 
 // Amazon
@@ -35,7 +38,6 @@ import org.json4s.jackson.JsonMethods._
 
 // Scalaz
 import scalaz.Scalaz._
-//import scalaz._
 
 // TODO consider giving BadEventTransformer its own types
 

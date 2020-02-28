@@ -1,4 +1,9 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
+package com.snowplowanalytics.stream.loader.elasticsearch
 /**
+ * © Copyright 2020 The Globe and Mail
  * Copyright (c) 2014-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -16,32 +21,35 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package elasticsearch
 
-import clients.{BulkSender, BulkSenderHTTP}
+
+import clients.BulkSenderHTTP
+import com.snowplowanalytics.stream.loader.clients.BulkSender
 import com.snowplowanalytics.stream.loader.executors.KinesisSourceExecutor
+import com.snowplowanalytics.stream.loader.model.Config.Kinesis
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
 import loader.StreamLoaderApp
-import model.Config.Kinesis
-import pipelines.KinesisPipeline
+import com.snowplowanalytics.stream.loader.pipelines.KinesisPipeline
 import utils.CredentialsLookup
 
 import scala.io.Source
 
 // Scalaz
-import scalaz._
-import Scalaz._
+import scalaz.Scalaz._
 
 /** Main entry point for the Elasticsearch HTTP sink */
 object ElasticsearchHTTPStreamLoaderApp extends StreamLoaderApp {
 
+  private val Two = 2
+  private val Ten = 10
+  
   val bulkSender: BulkSender[EmitterJsonInput] = config.elasticsearch match {
     case None =>
       throw new RuntimeException("No configuration for Elasticsearch found.")
     case _ =>
       val schema = config.elasticsearch.get.cluster.indexMappingFilePath match {
         case Some(path) => Some(Source.fromFile(path).getLines.mkString("\n"))
-        case None       => None
+        case None => None
       }
       new BulkSenderHTTP(
         config.elasticsearch.get.aws.region,
@@ -56,8 +64,8 @@ object ElasticsearchHTTPStreamLoaderApp extends StreamLoaderApp {
         config.elasticsearch.get.cluster.index,
         config.elasticsearch.get.cluster.documentType,
         config.streamType,
-        config.elasticsearch.get.cluster.shardsCount.getOrElse(10),
-        config.elasticsearch.get.cluster.replicasCount.getOrElse(2),
+        config.elasticsearch.get.cluster.shardsCount.getOrElse(Ten),
+        config.elasticsearch.get.cluster.replicasCount.getOrElse(Two),
         config.elasticsearch.get.cluster.refreshInterval.getOrElse("1m"),
         schema,
         CredentialsLookup

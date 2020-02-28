@@ -1,18 +1,23 @@
+/*
+ * © Copyright 2020 The Globe and Mail
+ */
 package com.snowplowanalytics.stream.loader
 package executors
 
-import java.nio.charset.StandardCharsets.UTF_8
+
 import java.time.Duration
 import java.util
 import java.util.Properties
 import java.util.concurrent.Executors
 
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
-import clients.BulkSender
-import com.snowplowanalytics.stream.loader.EmitterJsonInput
+import com.snowplowanalytics.stream.loader.clients.BulkSender
+import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.snowplowanalytics.stream.loader.transformers.eventTransformers._
-import emitter.Emitter
-import model.Config._
+import com.snowplowanalytics.stream.loader.emitter.Emitter
+import com.snowplowanalytics.stream.loader.model.Config._
+import model.JsonRecord
+import scalaz.ValidationNel
 import sinks.ISink
 
 import scala.collection.JavaConverters._
@@ -30,18 +35,18 @@ class KafkaSourceExecutor(streamType: StreamType,
                           config:StreamLoaderConfig) extends Runnable  {
 
 // value of shardDateField , shardDateFormat,goodSInk and badSink ??
-  val properties = KafkaProcessorConfig(kafka.broker, kafka.groupId)
-  val consumer = new KafkaConsumer[String, Array[Byte]](properties)
-  val kafkaBufferSize = config.streams.buffer.recordLimit
+  val properties: Properties = KafkaProcessorConfig(kafka.broker, kafka.groupId)
+  val consumer: KafkaConsumer[String, Array[Byte]] = new KafkaConsumer[String, Array[Byte]](properties)
+  val kafkaBufferSize: Long = config.streams.buffer.recordLimit
   val msgBuffer = new ListBuffer[EmitterJsonInput]()
-  val emitter = new Emitter(
+  val emitter: Emitter = new Emitter(
     postgresSender,
     goodSink,
     badSink,
     config.streams.buffer.recordLimit,
     config.streams.buffer.byteLimit)
 
-  val transformer =
+  val transformer: ITransformer[(String, ValidationNel[String, JsonRecord]), (String, ValidationNel[String, JsonRecord])] with StdinTransformer =
     streamType match {
       case Good => new EnrichedEventJsonTransformer(shardDateField, shardDateFormat,mapping)
       case PlainJson => new PlainJsonTransformer
@@ -69,7 +74,8 @@ class KafkaSourceExecutor(streamType: StreamType,
     Executors.newSingleThreadExecutor.execute(new Runnable {
       override def run(): Unit = {
         while (true) {
-          val record = consumer.poll(Duration.ofMillis(1000)).asScala
+          val Thousand = 1000
+          val record = consumer.poll(Duration.ofMillis(Thousand)).asScala
           for (data <- record.iterator)
             msgBuffer.synchronized {
               println("############################################"+data.value().map(_.toChar).mkString)
