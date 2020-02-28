@@ -21,7 +21,7 @@
  */
 package com.snowplowanalytics.stream.loader.model
 
-import org.json4s.JValue
+import org.json4s.JsonAST.JObject
 
 /**
  * Format in which Snowplow events are buffered

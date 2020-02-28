@@ -16,7 +16,7 @@ import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.snowplowanalytics.stream.loader.transformers.eventTransformers._
 import com.snowplowanalytics.stream.loader.emitter.Emitter
 import com.snowplowanalytics.stream.loader.model.Config._
-import model.JsonRecord
+import com.snowplowanalytics.stream.loader.model.JsonRecord
 import scalaz.ValidationNel
 import sinks.ISink
 
@@ -35,7 +35,7 @@ class KafkaSourceExecutor(streamType: StreamType,
                           config:StreamLoaderConfig) extends Runnable  {
 
 // value of shardDateField , shardDateFormat,goodSInk and badSink ??
-  val properties: Properties = KafkaProcessorConfig(kafka.broker, kafka.groupId)
+  val properties: Properties = kafkaProcessorConfig(kafka.broker, kafka.groupId)
   val consumer: KafkaConsumer[String, Array[Byte]] = new KafkaConsumer[String, Array[Byte]](properties)
   val kafkaBufferSize: Long = config.streams.buffer.recordLimit
   val msgBuffer = new ListBuffer[EmitterJsonInput]()
@@ -54,7 +54,7 @@ class KafkaSourceExecutor(streamType: StreamType,
     }
 
 
-  private def KafkaProcessorConfig(broker:String,groupId:String) :Properties={
+  private def kafkaProcessorConfig(broker:String,groupId:String) :Properties={
     val properties = new Properties()
 
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.broker)
@@ -78,9 +78,7 @@ class KafkaSourceExecutor(streamType: StreamType,
           val record = consumer.poll(Duration.ofMillis(Thousand)).asScala
           for (data <- record.iterator)
             msgBuffer.synchronized {
-              println("############################################"+data.value().map(_.toChar).mkString)
               val emitterInput = transformer.consumeLine(data.value().map(_.toChar).mkString)
-              println("##################################emitter##############"+emitterInput)
               msgBuffer += emitterInput
 
               if (msgBuffer.size == kafkaBufferSize) {

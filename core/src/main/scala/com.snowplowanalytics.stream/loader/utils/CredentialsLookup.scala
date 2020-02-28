@@ -110,6 +110,6 @@ object CredentialsLookup {
   // Wrap BasicAWSCredential objects.
   class BasicAWSCredentialsProvider(basic: BasicAWSCredentials) extends AWSCredentialsProvider {
     @Override def getCredentials: AWSCredentials = basic
-    @Override def refresh                        = {}
+    @Override def refresh: Unit = {}
   }
 }

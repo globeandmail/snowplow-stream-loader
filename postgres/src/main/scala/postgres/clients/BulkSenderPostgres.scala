@@ -101,7 +101,6 @@ class BulkSenderPostgres(
                 val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json.asInstanceOf[JObject])
                 extractedValueOption.exists(filterVals.contains)
               }
-              println("#################filtereddddddddddddddd redordssssssssssssssssss"+filteredRecords)
               filteredRecords
             } else {
               recordsForPartition

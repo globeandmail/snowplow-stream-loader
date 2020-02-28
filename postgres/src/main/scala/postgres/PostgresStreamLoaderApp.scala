@@ -82,7 +82,6 @@ object PostgresStreamLoaderApp extends StreamLoaderApp {
         case None => null
       }
 
-        println("######################schemas######################## "+schemas)
       new BulkSenderPostgres(
         config.postgres.get.server,
         config.postgres.get.port,

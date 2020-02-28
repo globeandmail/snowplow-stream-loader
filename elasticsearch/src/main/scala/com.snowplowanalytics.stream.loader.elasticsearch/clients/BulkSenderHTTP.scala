@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import BulkSenderHTTP._
 
 class BulkSenderHTTP(
   region: String,
@@ -68,8 +69,8 @@ class BulkSenderHTTP(
   username: Option[String],
   password: Option[String],
   ssl: Boolean,
-  override val maxConnectionWaitTimeMs: Long = 60000L,
-  override val maxAttempts: Int              = 6,
+  override val maxConnectionWaitTimeMs: Long = MaxConnectionWaitTimeMs,
+  override val maxAttempts: Int              = MaxAttempts,
   indexName: String,
   documentType: String,
   streamType: StreamType,
@@ -192,7 +193,9 @@ class BulkSenderHTTP(
           forceShutdown()
           Nil
       }
-    } else Nil
+    } else {
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records to Elasticseacrch")
     if (newFailures.nonEmpty) logHealth()
@@ -245,4 +248,9 @@ class BulkSenderHTTP(
       }
       .getOrElse(None)
   }
+}
+
+object BulkSenderHTTP {
+  val MaxConnectionWaitTimeMs: Long = 60000L
+  val MaxAttempts:Int = 6
 }

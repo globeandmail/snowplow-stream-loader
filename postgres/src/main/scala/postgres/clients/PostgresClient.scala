@@ -66,7 +66,6 @@ trait UsingPostgres {
       classDriveName = "org.postgresql.Driver"
     )
 
-  println("#############################################################defn postgres################     "+defn)
   implicit val dataSource = createDataSource
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
@@ -81,7 +80,6 @@ trait UsingPostgres {
       connection.setAutoCommit(false)
       jsonRecords
         .map { jsonRecord =>
-          println("########################################################jsonrecorddddddddddddddddddddd"+jsonRecord.json)
           createParentTableQueries(jsonRecord.json.extract[Map[String, Any]], tableNamesWithPartition)
         }
         .map { statement =>
@@ -153,7 +151,6 @@ trait UsingPostgres {
     implicit connection: Connection
   ): PreparedStatement = {
 
-    println("json fields map###############################################"+jsonFields)
     val columnNames = jsonFields.keys.map(c => utils.JsonUtils.camelToSnake(c)).mkString(",")
     val stringSigns = List.fill(jsonFields.values.size)("?").mkString(",")
     val insertStatement =
@@ -171,7 +168,6 @@ trait UsingPostgres {
   private def convertJsonFieldsToPreparedStatement(statement: String, jsonFields: Map[String, Any])(
     implicit connection: Connection
   ): PreparedStatement = {
-    println("convert json to ps#######################################################"+jsonFields.zipWithIndex)
     val ps = connection.prepareStatement(statement)
     jsonFields.zipWithIndex.map { case (v, index) => (v, index + 1) }.foreach {
       case ((key, value: String), index: Int)  => ps.setString(index, value)
@@ -214,14 +210,13 @@ trait UsingPostgres {
         .map {
           case (contextEventName: String, contextEventData: List[Map[String, Any]]) =>
             (contextEventName, List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap))
-          // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map.
-          // This is either a Scala issue, Snowplow Bug or the library that converted that Json Object to Map.
-          // We get MatchError exception, because filter doesn't work for all of the Map kids.
-          // The Library creates Map2, Map3, etc instead of Map
+          // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map. This is either a Scala issue,
+          // Snowplow Bug or the library that converted that Json Object to Map.
+          // We get MatchError exception, because filter doesn't work for all of the Map kids. The Library creates Map2, Map3, etc instead of Map
           // All of them go through this match/case but not filter
           // Below is an example of the data that turns out to be Map2
-          //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81),
-          // Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
+          //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81), Map(name -> sp,
+          // value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
           case (unstructEventName: String, unstructEventData: Map[String, Any]) =>
             (unstructEventName, List(unstructEventData))
           case _ => throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")
@@ -234,7 +229,7 @@ trait UsingPostgres {
               (valuesSet.isEmpty                               ||
                 valuesSet.size == 1 && (valuesSet == Set(null) || valuesSet == Set(None)))
                 || (valuesSet.size == 2 && valuesSet == Set(null, None))
-            ) // if all empty, what is the point?
+              ) // if all empty, what is the point?
           }
         }
 
@@ -264,9 +259,7 @@ trait UsingPostgres {
     withStatement(implicit statement => {
       tableNames.foreach { tableName =>
         schemaFiles.get(tableName) match {
-          case Some(schema) =>{
-            createTableWithDoubleCheck(tableName, schema)
-          }
+          case Some(schema) => createTableWithDoubleCheck(tableName, schema)
           case None         => throw new RuntimeException(s"schema file doesn't exist for $tableName")
         }
       }
@@ -281,7 +274,6 @@ trait UsingPostgres {
    */
   private def createTableWithDoubleCheck(tableName: String, schema: String)(implicit dataSource: DataSource) =
     withStatement(implicit statement => {
-
       if (!tableExists(s"$mainSchema.$tableName")) {
         try {
           statement.execute(schema)
@@ -336,13 +328,12 @@ trait UsingPostgres {
                  |
                  | COMMIT;
              """.stripMargin
-            println("############################################sql query####################"+sql)
             try {
               statement.execute(sql)
             } catch {
               case e: PSQLException =>
                 if (!e.getMessage.contains("already exists") && !e.getMessage
-                      .contains("current transaction is aborted")) {
+                  .contains("current transaction is aborted")) {
                   //we can ignore the case that the table might exist. the rest we should raise.
                   throw e
                 }

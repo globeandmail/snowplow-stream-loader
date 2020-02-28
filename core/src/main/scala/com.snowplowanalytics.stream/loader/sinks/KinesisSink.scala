@@ -114,7 +114,7 @@ class KinesisSink(
    *               record is assigned. Defaults to a random string.
    * @param good   Unused parameter which exists to extend ISink
    */
-  def store(output: String, key: Option[String], good: Boolean) =
+  def store(output: String, key: Option[String], good: Boolean): Unit =
     put(name, ByteBuffer.wrap(output.getBytes(UTF_8)), key.getOrElse(Random.nextInt.toString)) onComplete {
       case Success(result) => {
         //log.info(s"Writing successful - ShardId: ${result.getShardId} SequenceNumber: ${result.getSequenceNumber}")
@@ -190,7 +190,9 @@ class KinesisSink(
               log.error(s"Record failed with error code [${f._2.getErrorCode}] and message [${f._2.getErrorMessage}]")
           )
           failurePairs.map(_._1)
-        } else List()
+        } else {
+          List()
+        }
       } else {
         List()
       }

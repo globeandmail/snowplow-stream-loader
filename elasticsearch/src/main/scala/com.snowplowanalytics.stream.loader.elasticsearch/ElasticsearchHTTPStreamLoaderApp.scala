@@ -42,7 +42,6 @@ object ElasticsearchHTTPStreamLoaderApp extends StreamLoaderApp {
 
   private val Two = 2
   private val Ten = 10
-  
   val bulkSender: BulkSender[EmitterJsonInput] = config.elasticsearch match {
     case None =>
       throw new RuntimeException("No configuration for Elasticsearch found.")

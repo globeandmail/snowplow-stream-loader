@@ -25,7 +25,7 @@ package com.snowplowanalytics.stream.loader.executors
 import java.util.Properties
 
 import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline
-import model.Config.{Kinesis, StreamLoaderConfig}
+import com.snowplowanalytics.stream.loader.model.Config._
 import utils.CredentialsLookup
 import org.slf4j.{Logger, LoggerFactory}
 
