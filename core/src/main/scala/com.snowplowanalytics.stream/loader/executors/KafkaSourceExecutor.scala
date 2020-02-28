@@ -26,6 +26,7 @@ class KafkaSourceExecutor(streamType: StreamType,
                           kafka: Kafka,
                           shardDateField: Option[String],
                           shardDateFormat: Option[String],
+                          mapping:Option[Map[String, String]],
                           config:StreamLoaderConfig) extends Runnable  {
 
 // value of shardDateField , shardDateFormat,goodSInk and badSink ??
@@ -42,7 +43,7 @@ class KafkaSourceExecutor(streamType: StreamType,
 
   val transformer =
     streamType match {
-      case Good => new EnrichedEventJsonTransformer(shardDateField, shardDateFormat)
+      case Good => new EnrichedEventJsonTransformer(shardDateField, shardDateFormat,mapping)
       case PlainJson => new PlainJsonTransformer
       case Bad => new BadEventTransformer
     }
@@ -71,7 +72,9 @@ class KafkaSourceExecutor(streamType: StreamType,
           val record = consumer.poll(Duration.ofMillis(1000)).asScala
           for (data <- record.iterator)
             msgBuffer.synchronized {
+              println("############################################"+data.value().map(_.toChar).mkString)
               val emitterInput = transformer.consumeLine(data.value().map(_.toChar).mkString)
+              println("##################################emitter##############"+emitterInput)
               msgBuffer += emitterInput
 
               if (msgBuffer.size == kafkaBufferSize) {

@@ -25,8 +25,10 @@ import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 import com.amazonaws.services.kinesis.model.Record
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
 import model.JsonRecord
+import org.json4s.JObject
 import scalaz.Scalaz._
 import scalaz._
+import utils.JsonUtils
 
 // Java
 import java.nio.charset.StandardCharsets.UTF_8
@@ -47,7 +49,9 @@ import com.snowplowanalytics.snowplow.analytics.scalasdk.json.EventTransformer._
  * Class to convert successfully enriched events to EmitterInputs
  *
  */
-class EnrichedEventJsonTransformer(shardDateField: Option[String], shardDateFormat: Option[String])
+class EnrichedEventJsonTransformer(shardDateField: Option[String],
+                                   shardDateFormat: Option[String],
+                                   mappingTable: Option[Map[String, String]])
     extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
@@ -88,7 +92,8 @@ class EnrichedEventJsonTransformer(shardDateField: Option[String], shardDateForm
         .split("\t", -1)) match {
       case Left(h :: t) => NonEmptyList(h, t: _*).failure
       case Left(Nil)    => "Empty list of failures but reported failure, should not happen".failureNel
-      case Right((_, json)) =>
+      case Right((_, rawJson)) =>
+        val json = JsonUtils.denormalizeEvent(JsonUtils.renameField(rawJson, mappingTable))
 
         dateFormatter match {
           case Some(dateF) =>
@@ -104,9 +109,10 @@ class EnrichedEventJsonTransformer(shardDateField: Option[String], shardDateForm
                   .some
               case _ => None
             }
-            JsonRecord(json, shard).success
+
+            JsonRecord(json.asInstanceOf[JObject], shard).success
           case None =>
-            JsonRecord(json, None).success
+            JsonRecord(json.asInstanceOf[JObject], None).success
         }
     }
 

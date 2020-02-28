@@ -79,6 +79,7 @@ object PostgresStreamLoaderApp extends StreamLoaderApp {
         case None => null
       }
 
+        println("######################schemas######################## "+schemas)
       new BulkSenderPostgres(
         config.postgres.get.server,
         config.postgres.get.port,
@@ -132,6 +133,7 @@ object PostgresStreamLoaderApp extends StreamLoaderApp {
             queueConfig,
             config.postgres.get.shardTableDateField,
             config.postgres.get.shardTableDateFormat,
+            config.mappingTable,
             config).success
 
         case _ => "Source must be set to 'stdin', 'kinesis' or 'nsq'".failure

@@ -42,7 +42,7 @@ class BulkSenderPostgres(
 ) extends BulkSender[EmitterJsonInput]
     with UsingPostgres {
 
-  val maxConnectionWaitTimeMs: Long = 10000
+  val maxConnectionWaitTimeMs: Long = 100000
   val maxAttempts: Int              = 2
 
   case object PostgresFilterTypes {
@@ -98,8 +98,11 @@ class BulkSenderPostgres(
                 val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json.asInstanceOf[JObject])
                 extractedValueOption.exists(filterVals.contains)
               }
+              println("#################filtereddddddddddddddd redordssssssssssssssssss"+filteredRecords)
               filteredRecords
-            } else recordsForPartition
+            } else {
+              recordsForPartition
+            }
           }
         }
         .filter(_._2.nonEmpty)

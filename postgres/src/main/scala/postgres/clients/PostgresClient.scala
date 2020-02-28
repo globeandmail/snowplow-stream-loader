@@ -1,7 +1,7 @@
 package clients
 
 import org.apache.commons.dbcp2.BasicDataSource
-import java.sql.{Connection, PreparedStatement, SQLException, Statement}
+import java.sql.{Connection, PreparedStatement, SQLException, Statement,Types}
 
 import javax.sql.DataSource
 import java.text.SimpleDateFormat
@@ -63,6 +63,7 @@ trait UsingPostgres {
       classDriveName = "org.postgresql.Driver"
     )
 
+  println("#############################################################defn postgres################     "+defn)
   implicit val dataSource = createDataSource
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
@@ -77,6 +78,7 @@ trait UsingPostgres {
       connection.setAutoCommit(false)
       jsonRecords
         .map { jsonRecord =>
+          println("########################################################jsonrecorddddddddddddddddddddd"+jsonRecord.json)
           createParentTableQueries(jsonRecord.json.extract[Map[String, Any]], tableNamesWithPartition)
         }
         .map { statement =>
@@ -124,6 +126,7 @@ trait UsingPostgres {
 
   private def withConnection[X](fn: Connection => X)(implicit dataSource: DataSource) = {
     val c = dataSource.getConnection
+    c.setAutoCommit(false)
     try fn(c)
     finally c.close
   }
@@ -144,6 +147,8 @@ trait UsingPostgres {
   private def createParentTableQueries(jsonFields: Map[String, Any], tableNamesWithPartition: Map[String, String])(
     implicit connection: Connection
   ): PreparedStatement = {
+
+    println("json fields map###############################################"+jsonFields)
     val columnNames = jsonFields.keys.map(c => utils.JsonUtils.camelToSnake(c)).mkString(",")
     val stringSigns = List.fill(jsonFields.values.size)("?").mkString(",")
     val insertStatement =
@@ -161,6 +166,7 @@ trait UsingPostgres {
   private def convertJsonFieldsToPreparedStatement(statement: String, jsonFields: Map[String, Any])(
     implicit connection: Connection
   ): PreparedStatement = {
+    println("convert json to ps#######################################################"+jsonFields.zipWithIndex)
     val ps = connection.prepareStatement(statement)
     jsonFields.zipWithIndex.map { case (v, index) => (v, index + 1) }.foreach {
       case ((key, value: String), index: Int)  => ps.setString(index, value)
@@ -170,8 +176,9 @@ trait UsingPostgres {
       case ((_, value: Long), index: Int)      => ps.setLong(index, value)
       case ((_, value: BigInt), index: Int)    => ps.setLong(index, value.toLong)
       case ((_, value: List[Any]), index: Int) =>
+        println("")
         // the alternative is to use : connection.createArrayOf(typeName, data); or https://jdbc.postgresql.org/documentation/head/arrays.html
-        ps.setObject(index, value)
+        ps.setObject(index, value, Types.OTHER)
       case ((_, null | None), index: Int) => ps.setString(index, null)
       case ((_, value: Map[Any, Any]), index: Int) =>
         val pgObject = new PGobject
@@ -249,7 +256,9 @@ trait UsingPostgres {
     withStatement(implicit statement => {
       tableNames.foreach { tableName =>
         schemaFiles.get(tableName) match {
-          case Some(schema) => createTableWithDoubleCheck(tableName, schema)
+          case Some(schema) =>{
+            createTableWithDoubleCheck(tableName, schema)
+          }
           case None         => throw new RuntimeException(s"schema file doesn't exist for $tableName")
         }
       }
@@ -264,6 +273,7 @@ trait UsingPostgres {
    */
   private def createTableWithDoubleCheck(tableName: String, schema: String)(implicit dataSource: DataSource) =
     withStatement(implicit statement => {
+
       if (!tableExists(s"$mainSchema.$tableName")) {
         try {
           statement.execute(schema)
@@ -318,6 +328,7 @@ trait UsingPostgres {
                  |
                  | COMMIT;
              """.stripMargin
+            println("############################################sql query####################"+sql)
             try {
               statement.execute(sql)
             } catch {

@@ -37,7 +37,11 @@ lazy val commonDependencies = Seq(
   // Scala (test only)
   Dependencies.Libraries.specs2,
   Dependencies.Libraries.kafka,
-  Dependencies.Libraries.kafkaClient
+  Dependencies.Libraries.kafkaClient,
+  Dependencies.Libraries.circeCore,
+  Dependencies.Libraries.circeGeneric,
+  Dependencies.Libraries.circeParser
+
 )
 
 lazy val buildSettings = Seq(

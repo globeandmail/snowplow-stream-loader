@@ -16,8 +16,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.stream.loader
-package executors
+package com.snowplowanalytics.stream.loader.executors
 
 // Logging
 import java.util.Properties

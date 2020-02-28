@@ -3,14 +3,11 @@ package sinks
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Properties
 
-import model.Config.Kafka
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
-import scala.util.Random
 
 class KafkaSink(broker:String,topic:String) extends ISink {
 
-  val rnd = new Random()
   val props = new Properties()
   props.put("bootstrap.servers", broker)
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")

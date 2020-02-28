@@ -27,4 +27,4 @@ import org.json4s.JsonAST.JObject
  * @param json The JSON string for the event
  * @param partition partition to send the data
  */
-case class JsonRecord(json: JValue, partition: Option[String])
+case class JsonRecord(json: JObject, partition: Option[String])
