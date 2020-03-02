@@ -4,7 +4,7 @@ FROM harbor.sophi.io/sophi/scala-sbt:2.12.8_1.2.7 as build
 ARG PROTOCOL
 ARG LOADER_VERSION=0.10.1
 ARG SNOWPLOW_COMPONENT="stream-loader"
-ARG QUEUE="kinesis"
+ARG QUEUE="kafka"
 ARG WORK_DIR="/snowplow"
 
 
@@ -36,8 +36,8 @@ COPY --from=build ${WORK_DIR}/out /
 
 ENV LOG_LEVEL="info"\
     GITHUB_TOKEN="XXXXX" \
-    COLLECTOR_PORT="80" \
-    COLLECTOR_URI="collector:80" \
+    COLLECTOR_PORT="7070" \
+    COLLECTOR_URI="snowplow-kafka-collector.pipeline:7070" \
     AWS_REGION="us-east-1" \
     AWS_SECRET_KEY="iam" \
     AWS_ACCESS_KEY="iam" \
@@ -46,8 +46,8 @@ ENV LOG_LEVEL="info"\
     INPUT_QUEUE="enrichGood" \
     INPUT_QUEUE_TYPE="good" \
     OUTPUT_QUEUE="" \
-    GOOD_SINK="elasticsearch" \
-    BAD_SINK="stderr" \
+    GOOD_SINK="postgres" \
+    BAD_SINK="kafka" \
     QUEUE_PARTITION_KEY_NAME="network_userid" \
     QUEUE_INITIAL_POSITION="LATEST" \
     QUEUE_INITIAL_TIMESTAMP="2000-01-01T00:00:00Z" \
@@ -75,7 +75,7 @@ ENV LOG_LEVEL="info"\
     POSTGRES_PASSWORD="postgres" \
     POSTGRES_TABLE="atomic.events" \
     POSTGRES_SCHEMAS="schemas" \
-    POSTGRES_SINK_APP_ID_FILTER="" \
+    POSTGRES_SINK_APP_ID_FILTER="theglobeandmail-website" \
     SHARD_DATE_FIELD="derived_tstamp" \
     SHARD_DATE_FORMAT="yyyy_MM_dd" \
     BUCKET="tgam-sophi-data" \
@@ -96,7 +96,10 @@ ENV LOG_LEVEL="info"\
     DEDUPLICATION_TIME_LIMIT="3600" \
     CENTRAL_BRANCH=master \
     # to enable localstack set this to 1
-    AWS_CBOR_DISABLE=0
+    AWS_CBOR_DISABLE=0 \
+    KAFKA_BOOTSTRAP_SERVER="kafka-cp-kafka-headless.kafka:9092" \
+    KAFKA_GROUP_NAME="kafka-postgres-loader" \
+    TOPIC_BAD_PRODUCER="badLoaderTopic" \
 
 CMD cd /out/stream-loader && \
     if [ ! -d schemas ]; then \
@@ -187,6 +190,10 @@ CMD cd /out/stream-loader && \
     sed -i "s/{{deduplicationTimeLimit}}/${DEDUPLICATION_TIME_LIMIT}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s;# customEndpoint = {{kinesisEndpoint}};customEndpoint = ${KINESIS_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
     sed -i "s;# dynamodbCustomEndpoint = \"http://localhost:4569\";dynamodbCustomEndpoint = ${DYNAMO_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s/{{KAFKA_BOOTSTRAP_SERVER}}/${KAFKA_BOOTSTRAP_SERVER}/g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s/{{KAFKA_GROUP_NAME}}/${KAFKA_GROUP_NAME}/g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s/{{TOPIC_CONSUME}}/${INPUT_QUEUE}/g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s/{{TOPIC_BAD_PRODUCER}}/${TOPIC_BAD_PRODUCER}/g" /out/stream-loader/stream-loader.conf && \
     cat /out/stream-loader/stream-loader.conf && \
     cd /out/stream-loader && \
     java -Dorg.slf4j.simpleLogger.defaultLogLevel=${LOG_LEVEL} \

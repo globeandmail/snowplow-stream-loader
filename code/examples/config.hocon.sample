@@ -55,8 +55,15 @@ aws {
   # stsRegion = "{{stsRegion}}"
 }
 
+kafka {
+  broker={{KAFKA_BOOTSTRAP_SERVER}}
+  groupId={{KAFKA_GROUP_NAME}}
+  consumeTopic={{TOPIC_CONSUME}}
+  badProducerTopic={{TOPIC_BAD_PRODUCER}}
+}
+
 queueConfig {
-  enabled = "kinesis"
+  enabled = "kafka"
 
   # config for NSQ
 

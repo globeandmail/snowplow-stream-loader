@@ -48,7 +48,6 @@ object Dependencies {
     // Scala (test only)
     val specs2           = "4.1.0" //"3.9.2"
     val kafkaV           ="2.0.0"
-    val circeVersion = "0.12.3"
   }
 
   object Libraries {
@@ -93,9 +92,6 @@ object Dependencies {
     val elastic4sTest    = "com.sksamuel.elastic4s"  %% "elastic4s-embedded"           % V.elastic4s    % "test"
     val kafka            =  "org.apache.kafka"                %% "kafka"                        % V.kafkaV
     val kafkaClient      =  "org.apache.kafka"                % "kafka-clients"                  % V.kafkaV
-    val circeCore        = "io.circe" %% "circe-core" % V.circeVersion
-    val circeGeneric     = "io.circe" %% "circe-generic" % V.circeVersion
-    val circeParser      ="io.circe" %% "circe-parser" % V.circeVersion
 
   }
 }

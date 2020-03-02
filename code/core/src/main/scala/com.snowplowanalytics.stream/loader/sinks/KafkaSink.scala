@@ -14,7 +14,7 @@ class KafkaSink(broker:String,topic:String) extends ISink {
   val props = new Properties()
   props.put("bootstrap.servers", broker)
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("value.serializer", "org.apache.kafka.common.serialization.ArrayByteSerializer")
   props.put("acks","all")
   val producer = new KafkaProducer[Option[String], Array[Byte]](props)
 

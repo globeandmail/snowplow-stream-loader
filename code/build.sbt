@@ -38,9 +38,6 @@ lazy val commonDependencies = Seq(
   Dependencies.Libraries.specs2,
   Dependencies.Libraries.kafka,
   Dependencies.Libraries.kafkaClient,
-  Dependencies.Libraries.circeCore,
-  Dependencies.Libraries.circeGeneric,
-  Dependencies.Libraries.circeParser
 
 )
 
