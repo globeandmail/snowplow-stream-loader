@@ -41,7 +41,7 @@ import org.specs2.mutable.Specification
 
 // This project
 import com.snowplowanalytics.stream.loader.clients.BulkSender
-import sinks._
+import com.snowplowanalytics.stream.loader.sinks._
 
 class MockBulkSender extends BulkSender[EmitterJsonInput] {
   override val log: Logger =  null

@@ -1,7 +1,7 @@
 FROM harbor.sophi.io/sophi/scala-sbt:2.12.8_1.2.7 as build
 
 # ARGS
-ARG PROTOCOL
+ARG PROTOCOL="postgres"
 ARG LOADER_VERSION=0.10.1
 ARG SNOWPLOW_COMPONENT="stream-loader"
 ARG QUEUE="kafka"
@@ -99,7 +99,7 @@ ENV LOG_LEVEL="info"\
     AWS_CBOR_DISABLE=0 \
     KAFKA_BOOTSTRAP_SERVER="kafka-cp-kafka-headless.kafka:9092" \
     KAFKA_GROUP_NAME="kafka-postgres-loader" \
-    TOPIC_BAD_PRODUCER="badLoaderTopic" \
+    TOPIC_BAD_PRODUCER="badLoaderTopic"
 
 CMD cd /out/stream-loader && \
     if [ ! -d schemas ]; then \

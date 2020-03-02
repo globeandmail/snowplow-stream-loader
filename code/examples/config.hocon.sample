@@ -56,10 +56,10 @@ aws {
 }
 
 kafka {
-  broker={{KAFKA_BOOTSTRAP_SERVER}}
-  groupId={{KAFKA_GROUP_NAME}}
-  consumeTopic={{TOPIC_CONSUME}}
-  badProducerTopic={{TOPIC_BAD_PRODUCER}}
+  broker = "{{KAFKA_BOOTSTRAP_SERVER}}"
+  groupId = {{KAFKA_GROUP_NAME}}
+  consumeTopic = {{TOPIC_CONSUME}}
+  badProducerTopic = {{TOPIC_BAD_PRODUCER}}
 }
 
 queueConfig {
@@ -101,7 +101,7 @@ queueConfig {
 
   ## Optional endpoint url configuration to override aws kinesis endpoints,
   ## this can be used to specify local endpoints when using localstack
-  # customEndpoint = {{kinesisEndpoint}}
+  # customEndpoint = "{{kinesisEndpoint}}"
 
   ## Optional endpoint url configuration to override aws dyanomdb endpoints,
   ## this can be used to specify local endpoints when using localstack

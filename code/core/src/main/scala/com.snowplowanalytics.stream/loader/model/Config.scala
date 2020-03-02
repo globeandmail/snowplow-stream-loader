@@ -48,7 +48,7 @@ package Config {
                           broker: String,
                           groupId: String,
                           consumeTopic: String,
-                          badProducerTopic:String
+                          badProducerTopic: String
                         ) extends QueueConfig
   final case class Kinesis(
     initialPosition: String,
