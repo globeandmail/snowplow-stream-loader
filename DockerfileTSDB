@@ -96,7 +96,8 @@ ENV LOG_LEVEL="info"\
     DEDUPLICATION_TIME_LIMIT="3600" \
     CENTRAL_BRANCH="issue/SOPHI4-158" \
     # to enable localstack set this to 1
-    AWS_CBOR_DISABLE=0
+    AWS_CBOR_DISABLE=0 \
+    QUEUE="kinesis"
 
 CMD cd /out/stream-loader && \
     if [ ! -d schemas ]; then \
@@ -185,8 +186,8 @@ CMD cd /out/stream-loader && \
     sed -i "s/{{deduplicationField}}/${DEDUPLICATION_FIELD}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/{{deduplicationSizeLimit}}/${DEDUPLICATION_SIZE_LIMIT}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/{{deduplicationTimeLimit}}/${DEDUPLICATION_TIME_LIMIT}/g" /out/stream-loader/stream-loader.conf  && \
-    sed -i "s;# customEndpoint = {{kinesisEndpoint}};customEndpoint = ${KINESIS_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
-    sed -i "s;# dynamodbCustomEndpoint = \"http://localhost:4569\";dynamodbCustomEndpoint = ${DYNAMO_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s;# customEndpoint = {{kinesisEndpoint}};#customEndpoint = ${KINESIS_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s;# dynamodbCustomEndpoint = \"http://localhost:4569\";#dynamodbCustomEndpoint = ${DYNAMO_ENDPOINT};g" /out/stream-loader/stream-loader.conf && \
     cat /out/stream-loader/stream-loader.conf && \
     cd /out/stream-loader && \
     java -Dorg.slf4j.simpleLogger.defaultLogLevel=${LOG_LEVEL} \
