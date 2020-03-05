@@ -96,15 +96,18 @@ ENV LOG_LEVEL="info"\
     DEDUPLICATION_TIME_LIMIT="3600" \
     CENTRAL_BRANCH=master \
     # to enable localstack set this to 1
-    AWS_CBOR_DISABLE=0
+    AWS_CBOR_DISABLE=0 \
+    REPO_NAME="sophi4" \
+    SCHEMA_DIR="tsdbsql" \
+    QUEUE="kinesis"
 
 CMD cd /out/stream-loader && \
     if [ ! -d schemas ]; then \
         echo "grabbing $CENTRAL_BRANCH version of sophi/central" && \
         apk add --no-cache git && \
         rm -r -f repo && \
-        git clone -c http.sslVerify=false  --single-branch -b ${CENTRAL_BRANCH} https://${GITHUB_TOKEN}@github.com/globeandmail/sophi3.git repo && \
-        mv repo/central/pgsql/ schemas && \
+        git clone -c http.sslVerify=false  --single-branch -b ${CENTRAL_BRANCH} https://${GITHUB_TOKEN}@github.com/globeandmail/${REPO_NAME}.git repo && \
+        mv repo/central/${SCHEMA_DIR}/ schemas && \
         cp repo/central/es/mapping.json . && \
         rm -r -f repo && \
         apk del --purge git ; \
