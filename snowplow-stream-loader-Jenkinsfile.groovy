@@ -135,7 +135,7 @@ def replaceSensitiveBuildArgsValues(buildArgs, Map svmVars) {
         def entries = map.entrySet()
         entries.each { entry ->
             if (entry.key == "GITHUB_TOKEN") {
-                withCredentials([string(credentialsId: 'test-github-token', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     echo "GITHUB_TOKEN replaced"
                     newBuildArgs.add(["GITHUB_TOKEN": env.GITHUB_TOKEN])
                 }
@@ -156,7 +156,7 @@ def getFileChangesFromApi(String prId) {
     def fileChanges
     def fileNames
 
-    withCredentials([string(credentialsId: 'test-github-token', variable: 'GITHUB_TOKEN')]) {
+    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
         jsonResp = sh(
                 script: "wget --header 'Authorization: Bearer ${env.GITHUB_TOKEN}' -qO- https://api.github.com/repos/globeandmail/snowplow-stream-loader/pulls/${env.CHANGE_ID}/files",
                 returnStdout: true
@@ -174,7 +174,7 @@ def getLabelFromPrApi(String branchName) {
     def label
     def jsonResp
     String labelName
-    withCredentials([string(credentialsId: 'test-github-token', variable: 'GITHUB_TOKEN')]) {
+    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
         jsonResp = sh(
                 script: "wget --header 'Authorization: Bearer ${env.GITHUB_TOKEN}' -qO- https://api.github.com/repos/globeandmail/snowplow-stream-loader/pulls/${env.CHANGE_ID}",
                 returnStdout: true
@@ -194,7 +194,7 @@ def getLabelFromCommitsApi(String commitSha) {
     String labelName
     def jsonResp
 
-    withCredentials([string(credentialsId: 'test-github-token', variable: 'GITHUB_TOKEN')]) {
+    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
         jsonResp = sh(
                 script: "wget --header 'Authorization: Bearer ${env.GITHUB_TOKEN}' " +
                         "--header 'Accept: application/vnd.github.groot-preview+json' " +
@@ -295,7 +295,7 @@ def getDefaultBuildArgs(String component, Map scmVars) {
 }
 def executeGitCommandWithCredentials(String command){
     String stdOut
-    withCredentials([string(credentialsId: 'test-github-token', variable: 'GITHUB_TOKEN')]){
+    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]){
         stdOut =  sh(script: """
                git remote rm origin
                git remote add origin https://${env.GITHUB_TOKEN}@github.com/globeandmail/snowplow-stream-loader.git
