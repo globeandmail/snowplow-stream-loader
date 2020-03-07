@@ -41,6 +41,7 @@ def extractAppsToDeploy(String fileChanges) {
             echo "Revert Mode detected, automatic version bump disabled"
             isManualMode=true
         }
+        echo "-------------- ${path.length} -------------"
         if (path.length >= 1) { // If there are only 1 parts or less, the file modified doesn't belong to a project
             for (i = 0; i < path.length; i++) {
                 applications.push(path[i + 1])
