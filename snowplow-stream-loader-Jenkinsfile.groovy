@@ -43,10 +43,8 @@ def extractAppsToDeploy(String fileChanges) {
         }
         if (path.length >= 1) { // If there are only 1 parts or less, the file modified doesn't belong to a project
             for (i = 0; i < path.length; i++) {
-                if (i + 1 <= path.length) { // not the last item
-                        applications.push(path[i + 1])
-                        echo "${path[i + 1]}"
-                }
+                applications.push(path[i + 1])
+                echo "${path[i + 1]}"
             }
         }
 
