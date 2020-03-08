@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat
 import java.time.temporal.ChronoUnit
 import java.util.{Date, TimeZone}
 
+import model.JsonRecord
 import org.postgresql.util.{PGobject, PSQLException}
 import org.slf4j.LoggerFactory
 

@@ -15,8 +15,10 @@ package clients
 import com.github.blemale.scaffeine.Cache
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
+import model.JsonRecord
 import org.json4s.JsonAST.JObject
-
+import scalaz._
+import Scalaz._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
@@ -125,7 +127,7 @@ class BulkSenderPostgres(
                 forceShutdown()
                 Nil
             }
-          case (None, recordsForPartition) =>
+          case (null, recordsForPartition) =>
             futureToTask(Future { write(null, recordsForPartition) })
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
