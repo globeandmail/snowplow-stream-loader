@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat
 import java.time.temporal.ChronoUnit
 import java.util.{Date, TimeZone}
 
-import model.JsonRecord
 import org.postgresql.util.{PGobject, PSQLException}
 import org.slf4j.LoggerFactory
 
@@ -66,51 +65,98 @@ trait UsingPostgres {
   implicit val dataSource = createDataSource
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
-
     val tableNames = Set(coreTableName)
     val tableNamesWithPartition =
       tableNames.map(tableName => (tableName, tableNameForPartition(tableName, partitionName))).toMap
     createParentTablesIfNotExists(tableNames)
     if (partitionName != null) { // partitioning is active
       createPartitionTablesIfNotExists(tableNamesWithPartition, partitionName)
-    }
-    withConnection { implicit connection =>
-      connection.setAutoCommit(false)
-      jsonRecords
-        .map { jsonRecord =>
-          createParentTableQueries(jsonRecord.json.values, tableNamesWithPartition)
-        }
-        .map { statement =>
-          try {
-            statement.execute()
-
-          } catch {
-            case ex: SQLException =>
-              connection.rollback()
-              if (!connection.getAutoCommit)
-                connection.setAutoCommit(true)
-              //cleaning table cache for retry
-              existingTables.clear()
-              //log what happened
-              log.error(ex.getMessage, ex)
-              log.error(statement.toString)
-              ex.getSQLState
+      withConnection { implicit connection =>
+        connection.setAutoCommit(false)
+        jsonRecords
+          .map { jsonRecord =>
+            createParentTableQueries(jsonRecord.json.extract[Map[String, Any]], tableNamesWithPartition)
           }
+          .map { statement =>
+            try {
+              statement.execute()
+
+            } catch {
+              case ex: SQLException =>
+                connection.rollback()
+                if (!connection.getAutoCommit) {
+                  connection.setAutoCommit(true)
+                }
+                //cleaning table cache for retry
+                existingTables.clear()
+                //log what happened
+                log.error(ex.getMessage, ex)
+                log.error(statement.toString)
+                ex.getSQLState
+            }
+          }
+        try {
+          connection.commit() //commit once for all
+          connection.setAutoCommit(true)
+          Array.fill[String](jsonRecords.size)("00000").toList
+        } catch {
+          case ex: SQLException =>
+            connection.rollback()
+            if (!connection.getAutoCommit) {
+              connection.setAutoCommit(true)
+            }
+            //cleaning table cache for retry
+            existingTables.clear()
+            //log what happened
+            log.error(ex.getMessage, ex)
+            Array.fill[String](jsonRecords.size)(ex.getSQLState).toList
         }
-      try {
-        connection.commit() //commit once for all
-        connection.setAutoCommit(true)
-        Array.fill[String](jsonRecords.size)("00000").toList
-      } catch {
-        case ex: SQLException =>
-          connection.rollback()
-          if (!connection.getAutoCommit)
-            connection.setAutoCommit(true)
-          //cleaning table cache for retry
-          existingTables.clear()
-          //log what happened
-          log.error(ex.getMessage, ex)
-          Array.fill[String](jsonRecords.size)(ex.getSQLState).toList
+
+      }
+    }
+    else{
+      // no partitioning is there !! exclusively for tsdb
+      withConnection { implicit connection =>
+        connection.setAutoCommit(false)
+        jsonRecords
+          .map { jsonRecord =>
+            createParentTableQueriesTSDB(jsonRecord.json.extract[Map[String, Any]])
+          }
+          .map { statement =>
+            try {
+              statement.execute()
+
+            } catch {
+              case ex: SQLException =>
+                connection.rollback()
+                if (!connection.getAutoCommit) {
+                  connection.setAutoCommit(true)
+                }
+                //cleaning table cache for retry
+                existingTables.clear()
+                //log what happened
+                log.error(ex.getMessage, ex)
+                log.error(statement.toString)
+                ex.getSQLState
+            }
+          }
+        try {
+          connection.commit() //commit once for all
+          connection.setAutoCommit(true)
+          Array.fill[String](jsonRecords.size)("00000").toList
+        } catch {
+          case ex: SQLException =>
+            connection.rollback()
+            if (!connection.getAutoCommit) {
+              connection.setAutoCommit(true)
+            }
+            //cleaning table cache for retry
+            existingTables.clear()
+            //log what happened
+            log.error(ex.getMessage, ex)
+            Array.fill[String](jsonRecords.size)(ex.getSQLState).toList
+        }
+
       }
 
     }
@@ -151,6 +197,18 @@ trait UsingPostgres {
       s"INSERT INTO $partitionSchema.${tableNamesWithPartition.get(coreTableName).get} ($columnNames) VALUES ($stringSigns)"
     convertJsonFieldsToPreparedStatement(insertStatement, jsonFields)
   }
+
+  private def createParentTableQueriesTSDB(jsonFields: Map[String, Any])(
+    implicit connection: Connection
+  ): PreparedStatement = {
+
+    val columnNames = jsonFields.keys.map(c => utils.JsonUtils.camelToSnake(c)).mkString(",")
+    val stringSigns = List.fill(jsonFields.values.size)("?").mkString(",")
+    val insertStatement =
+      s"INSERT INTO $mainSchema.$coreTableName ($columnNames) VALUES ($stringSigns)"
+    convertJsonFieldsToPreparedStatement(insertStatement, jsonFields)
+  }
+
 
   /**
    * Puts json fields inside the prepared statement

@@ -15,9 +15,6 @@ package clients
 import com.github.blemale.scaffeine.Cache
 import com.snowplowanalytics.stream.loader.EmitterJsonInput
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
-import model.JsonRecord
-import scalaz._
-import Scalaz._
 import org.json4s.JsonAST.JObject
 
 import scala.concurrent.Future
@@ -104,7 +101,32 @@ class BulkSenderPostgres(
         .filter(_._2.nonEmpty)
         .map {
           case (partitionName, recordsForPartition) =>
+
             futureToTask(Future { write(partitionName, recordsForPartition) })
+              .retry(delays, exPredicate(connectionAttemptStartTime))
+              .map {
+                {
+                  case response =>
+                    response.zip(records).flatMap {
+                      case (responseItem, record) =>
+                        handleResponse(responseItem, record)
+                    }
+                }
+              }
+              .attempt
+              .unsafePerformSync match {
+              case \/-(s) => s.toList
+              case -\/(f) =>
+                log.error(
+                  s"Shutting down application as unable to connect to datastore for over $maxConnectionWaitTimeMs ms",
+                  f
+                )
+                // if the request failed more than it should have we force shutdown
+                forceShutdown()
+                Nil
+            }
+          case (None, recordsForPartition) =>
+            futureToTask(Future { write(null, recordsForPartition) })
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 {
