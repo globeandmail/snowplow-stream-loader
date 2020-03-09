@@ -90,20 +90,21 @@ class BulkSenderPostgres(
       successfulRecords
         .groupBy(r => r.partition)
         .mapValues { recordsForPartition =>
-          {
-            if (filterVals.nonEmpty) {
-              val filteredRecords = recordsForPartition.filter { rec =>
-                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
-                extractedValueOption.exists(filterVals.contains)
-              }
-              filteredRecords
-            } else recordsForPartition
+        {
+          if (filterVals.nonEmpty) {
+            val filteredRecords = recordsForPartition.filter { rec =>
+              val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
+              extractedValueOption.exists(filterVals.contains)
+            }
+            filteredRecords
+          } else {
+            recordsForPartition
           }
+        }
         }
         .filter(_._2.nonEmpty)
         .map {
           case (partitionName, recordsForPartition) =>
-
             futureToTask(Future { write(partitionName, recordsForPartition) })
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
@@ -154,7 +155,9 @@ class BulkSenderPostgres(
         }
         .flatten
         .toList
-    } else Nil
+    } else{
+      Nil
+    }
 
     log.info(s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored")
     if (newFailures.nonEmpty) logHealth()
