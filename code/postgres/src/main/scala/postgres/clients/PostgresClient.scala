@@ -43,28 +43,11 @@ trait UsingPostgres {
   sqlDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 
   val log                                      = LoggerFactory.getLogger(getClass)
-  val mainSchema                               = {
-                                                    val splitArray=parentTable.split("\\.")
-                                                    if (splitArray.length==2){
-                                                      parentTable.split("\\.")(0)
-                                                    }
-                                                    else{
-                                                      "atomic"
-                                                    }
-                                                    }
   val partitionSchema                          = "partition"
-  val coreTableName                            = {
-                                                  val splitArray=parentTable.split("\\.")
-                                                  if (splitArray.length==2){
-                                                    parentTable.split("\\.")(1)
-                                                  }
-                                                  else{
-                                                    "events"
-                                                  }
-                                                }
   val schemaFiles: mutable.Map[String, String] = collection.mutable.Map(schemas.toSeq: _*)
   val existingTables                           = mutable.Set[String]()
   implicit val formats                         = org.json4s.DefaultFormats
+  val (mainSchema ,coreTableName) = extractTableSchemaName(parentTable)
 
   implicit val defn: DataSourceDefn =
     DataSourceDefn(
@@ -80,6 +63,13 @@ trait UsingPostgres {
     )
 
   implicit val dataSource = createDataSource
+
+  def extractTableSchemaName(schemaAndTableName: String): (String, String) = {
+    if (schemaAndTableName.split("\\.").length == 2)
+      (schemaAndTableName.split("\\.")(0) , schemaAndTableName.split("\\.")(1))
+    else ("atomic","events")
+  }
+
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
     val tableNames = Set(coreTableName)
