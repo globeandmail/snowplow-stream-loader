@@ -93,7 +93,7 @@ class BulkSenderPostgres(
         {
           if (filterVals.nonEmpty) {
             val filteredRecords = recordsForPartition.filter { rec =>
-              val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json.asInstanceOf[JObject])
+              val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
               extractedValueOption.exists(filterVals.contains)
             }
             filteredRecords
@@ -128,6 +128,7 @@ class BulkSenderPostgres(
                 forceShutdown()
                 Nil
             }
+            // when partitioning is not active | TSDB
           case (null, recordsForPartition) =>
             futureToTask(Future { write(null, recordsForPartition) })
               .retry(delays, exPredicate(connectionAttemptStartTime))
