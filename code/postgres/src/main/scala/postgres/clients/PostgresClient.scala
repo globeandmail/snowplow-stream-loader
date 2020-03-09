@@ -43,9 +43,9 @@ trait UsingPostgres {
   sqlDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 
   val log                                      = LoggerFactory.getLogger(getClass)
-  val mainSchema                               = "atomic"
+  val mainSchema                               = parentTable.split("\\.")(0)
   val partitionSchema                          = "partition"
-  val coreTableName                            = "events"
+  val coreTableName                            = parentTable.split("\\.")(1)
   val schemaFiles: mutable.Map[String, String] = collection.mutable.Map(schemas.toSeq: _*)
   val existingTables                           = mutable.Set[String]()
   implicit val formats                         = org.json4s.DefaultFormats
