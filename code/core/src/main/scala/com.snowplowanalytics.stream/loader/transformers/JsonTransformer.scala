@@ -63,7 +63,7 @@ class JsonTransformer(
 
   private val dateFormatter: Option[SimpleDateFormat] =   documentIndexSuffixFormat
   match {
-    case Some(format) => new SimpleDateFormat(format).some
+    case Some(format) if !(format.trim.isEmpty()) => new SimpleDateFormat(format).some
     case _ => None
   }
 
