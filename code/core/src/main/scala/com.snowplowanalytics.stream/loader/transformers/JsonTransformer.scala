@@ -120,7 +120,7 @@ class JsonTransformer(
                       .getMillis
                   )
               case _ =>
-                throw new Exception(
+                throw new RuntimeException(
                   documentIndexSuffixField + " is not a JString, so we cannot extract the value"
                 )
             }

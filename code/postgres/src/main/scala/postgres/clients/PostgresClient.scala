@@ -88,7 +88,7 @@ trait UsingPostgres {
         jsonRecords
           .map { jsonRecord =>
             createParentTableQueries(
-              jsonRecord.json.extract[Map[String, Any]],
+              jsonRecord.json.values,
               tableNamesWithPartition
             )
           }
@@ -134,7 +134,7 @@ trait UsingPostgres {
         connection.setAutoCommit(false)
         jsonRecords
           .map { jsonRecord =>
-            createParentTableQueriesTSDB(jsonRecord.json.extract[Map[String, Any]])
+            createParentTableQueriesTSDB(jsonRecord.json.values)
           }
           .map { statement =>
             try {
