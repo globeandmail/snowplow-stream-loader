@@ -27,27 +27,29 @@ trait UsingPostgres {
   implicit val database: String
   implicit val username: String
   implicit val password: String
-  implicit val connectTimeout: Int            = 10
-  implicit val tcpKeepAlive: Boolean          = true
-  implicit val applicationName: String        = com.snowplowanalytics.stream.loader.generated.Settings.name
+  implicit val connectTimeout: Int = 10
+  implicit val tcpKeepAlive: Boolean = true
+  implicit val applicationName: String = com.snowplowanalytics.stream.loader.generated.Settings.name
   implicit val reWriteBatchedInserts: Boolean = true
-  implicit val maxConnections: Integer        = -1
+  implicit val maxConnections: Integer = -1
   implicit val parentTable: String
   implicit val schemas: Map[String, String]
   implicit val partitionDateField: Option[String]
   implicit val partitionDateFormat: Option[String]
 
-  val partitionDateFormatter: SimpleDateFormat = new SimpleDateFormat(partitionDateFormat.getOrElse("yyyy_MM_dd"))
+  val partitionDateFormatter: SimpleDateFormat = new SimpleDateFormat(
+    partitionDateFormat.getOrElse("yyyy_MM_dd")
+  )
   partitionDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
   val sqlDateFormatter: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
   sqlDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 
-  val log                                      = LoggerFactory.getLogger(getClass)
-  val partitionSchema                          = "partition"
+  val log = LoggerFactory.getLogger(getClass)
+  val partitionSchema = "partition"
   val schemaFiles: mutable.Map[String, String] = collection.mutable.Map(schemas.toSeq: _*)
-  val existingTables                           = mutable.Set[String]()
-  implicit val formats                         = org.json4s.DefaultFormats
-  val (mainSchema ,coreTableName) = extractTableSchemaName(parentTable)
+  val existingTables = mutable.Set[String]()
+  implicit val formats = org.json4s.DefaultFormats
+  val (mainSchema, coreTableName) = extractTableSchemaName(parentTable)
 
   implicit val defn: DataSourceDefn =
     DataSourceDefn(
@@ -64,17 +66,19 @@ trait UsingPostgres {
 
   implicit val dataSource = createDataSource
 
-  def extractTableSchemaName(schemaAndTableName: String): (String, String) = {
+  def extractTableSchemaName(schemaAndTableName: String): (String, String) =
     if (schemaAndTableName.split("\\.").length == 2)
-      (schemaAndTableName.split("\\.")(0) , schemaAndTableName.split("\\.")(1))
-    else ("atomic","events")
-  }
+      (schemaAndTableName.split("\\.")(0), schemaAndTableName.split("\\.")(1))
+    else ("atomic", "events")
 
-
-  protected def write(partitionName: String, jsonRecords: List[JsonRecord])(implicit dataSource: DataSource) = {
+  protected def write(partitionName: String, jsonRecords: List[JsonRecord])(
+    implicit dataSource: DataSource
+  ) = {
     val tableNames = Set(coreTableName)
     val tableNamesWithPartition =
-      tableNames.map(tableName => (tableName, tableNameForPartition(tableName, partitionName))).toMap
+      tableNames
+        .map(tableName => (tableName, tableNameForPartition(tableName, partitionName)))
+        .toMap
 
     createParentTablesIfNotExists(tableNames)
     if (partitionName != null) { // partitioning is active
@@ -83,7 +87,10 @@ trait UsingPostgres {
         connection.setAutoCommit(false)
         jsonRecords
           .map { jsonRecord =>
-            createParentTableQueries(jsonRecord.json.extract[Map[String, Any]], tableNamesWithPartition)
+            createParentTableQueries(
+              jsonRecord.json.extract[Map[String, Any]],
+              tableNamesWithPartition
+            )
           }
           .map { statement =>
             try {
@@ -121,8 +128,7 @@ trait UsingPostgres {
         }
 
       }
-    }
-    else{
+    } else {
       // no partitioning is there exclusively for tsdb
       withConnection { implicit connection =>
         connection.setAutoCommit(false)
@@ -183,11 +189,12 @@ trait UsingPostgres {
     finally c.close
   }
 
-  private def withStatement[X](fn: Statement => X)(implicit dataSource: DataSource) = withConnection { connection =>
-    val statement = connection.createStatement()
-    try fn(statement)
-    finally statement.close
-  }
+  private def withStatement[X](fn: Statement => X)(implicit dataSource: DataSource) =
+    withConnection { connection =>
+      val statement = connection.createStatement()
+      try fn(statement)
+      finally statement.close
+    }
 
   /**
    * Generates insert query for parent table
@@ -196,7 +203,10 @@ trait UsingPostgres {
    * @param connection
    * @return the prepared statement
    */
-  private def createParentTableQueries(jsonFields: Map[String, Any], tableNamesWithPartition: Map[String, String])(
+  private def createParentTableQueries(
+    jsonFields: Map[String, Any],
+    tableNamesWithPartition: Map[String, String]
+  )(
     implicit connection: Connection
   ): PreparedStatement = {
     val columnNames = jsonFields.keys.map(c => utils.JsonUtils.camelToSnake(c)).mkString(",")
@@ -267,7 +277,10 @@ trait UsingPostgres {
       jsonFields
         .map {
           case (contextEventName: String, contextEventData: List[Map[String, Any]]) =>
-            (contextEventName, List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap))
+            (
+              contextEventName,
+              List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap)
+            )
           // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map. This is either a Scala issue, Snowplow Bug or the library that converted that Json Object to Map.
           // We get MatchError exception, because filter doesn't work for all of the Map kids. The Library creates Map2, Map3, etc instead of Map
           // All of them go through this match/case but not filter
@@ -275,17 +288,18 @@ trait UsingPostgres {
           //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81), Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
           case (unstructEventName: String, unstructEventData: Map[String, Any]) =>
             (unstructEventName, List(unstructEventData))
-          case _ => throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")
+          case _ =>
+            throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")
         }
         .toList
         .filter {
           case (_, List(keyValues)) => {
             val valuesSet = keyValues.values.toSet
             !(
-              (valuesSet.isEmpty                               ||
+              (valuesSet.isEmpty ||
                 valuesSet.size == 1 && (valuesSet == Set(null) || valuesSet == Set(None)))
                 || (valuesSet.size == 2 && valuesSet == Set(null, None))
-              ) // if all empty, what is the point?
+            ) // if all empty, what is the point?
           }
         }
 
@@ -296,7 +310,7 @@ trait UsingPostgres {
     }
 
   private def tableExists(tableName: String)(implicit dataSource: DataSource): Boolean =
-    existingTables.contains(tableName) || withStatement(implicit statement => {
+    existingTables.contains(tableName) || withStatement { implicit statement =>
       val sql = s"SELECT * FROM $tableName LIMIT 1"
       Try(statement.executeQuery(sql)) match {
         case Success(_) =>
@@ -304,22 +318,24 @@ trait UsingPostgres {
           true
         case Failure(e) => false
       }
-    })
+    }
 
   /**
    * Creating the parent table with double check pattern
    * @param tableNames
    * @param dataSource
    */
-  private def createParentTablesIfNotExists(tableNames: Set[String])(implicit dataSource: DataSource) =
-    withStatement(implicit statement => {
+  private def createParentTablesIfNotExists(
+    tableNames: Set[String]
+  )(implicit dataSource: DataSource) =
+    withStatement { implicit statement =>
       tableNames.foreach { tableName =>
         schemaFiles.get(tableName) match {
           case Some(schema) => createTableWithDoubleCheck(tableName, schema)
           case None         => throw new RuntimeException(s"schema file doesn't exist for $tableName")
         }
       }
-    })
+    }
 
   /**
    * Creates the table with double check pattern
@@ -328,8 +344,10 @@ trait UsingPostgres {
    * @param dataSource
    * @return
    */
-  private def createTableWithDoubleCheck(tableName: String, schema: String)(implicit dataSource: DataSource) =
-    withStatement(implicit statement => {
+  private def createTableWithDoubleCheck(tableName: String, schema: String)(
+    implicit dataSource: DataSource
+  ) =
+    withStatement { implicit statement =>
       if (!tableExists(s"$mainSchema.$tableName")) {
         try {
           statement.execute(schema)
@@ -341,7 +359,7 @@ trait UsingPostgres {
           case e: Exception => throw e
         }
       }
-    })
+    }
 
   /**
    * Creating the date sharded partition from the main table and attaching to it
@@ -350,10 +368,13 @@ trait UsingPostgres {
    * @param dataSource
    * @return
    */
-  private def createPartitionTablesIfNotExists(tableNamesWithPartition: Map[String, String], partitionName: String)(
+  private def createPartitionTablesIfNotExists(
+    tableNamesWithPartition: Map[String, String],
+    partitionName: String
+  )(
     implicit dataSource: DataSource
   ) =
-    withStatement(implicit statement => {
+    withStatement { implicit statement =>
       tableNamesWithPartition.map {
         case (parentTable, partitionTableName) =>
           if (!tableExists(s"$partitionSchema.$partitionTableName")) {
@@ -389,14 +410,14 @@ trait UsingPostgres {
             } catch {
               case e: PSQLException =>
                 if (!e.getMessage.contains("already exists") && !e.getMessage
-                  .contains("current transaction is aborted")) {
+                      .contains("current transaction is aborted")) {
                   //we can ignore the case that the table might exist. the rest we should raise.
                   throw e
                 }
             }
           }
       }
-    })
+    }
 
   /**
    * What is the table name for this partition date value

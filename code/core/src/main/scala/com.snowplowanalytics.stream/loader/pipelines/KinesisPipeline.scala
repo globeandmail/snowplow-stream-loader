@@ -56,7 +56,9 @@ class KinesisPipeline(
   tracker: Option[Tracker] = None
 ) extends IKinesisConnectorPipeline[ValidatedJsonRecord, EmitterJsonInput] {
 
-  override def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterJsonInput] =
+  override def getEmitter(
+    configuration: KinesisConnectorConfiguration
+  ): IEmitter[EmitterJsonInput] =
     new Emitter(bulkSender, goodSink, badSink, bufferRecordLimit, bufferByteLimit)
 
   override def getBuffer(configuration: KinesisConnectorConfiguration) =
@@ -85,5 +87,6 @@ class KinesisPipeline(
       )
   }
 
-  override def getFilter(c: KinesisConnectorConfiguration) = new AllPassFilter[ValidatedJsonRecord]()
+  override def getFilter(c: KinesisConnectorConfiguration) =
+    new AllPassFilter[ValidatedJsonRecord]()
 }

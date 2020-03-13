@@ -24,24 +24,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
 class BulkSenderPostgres(
-                          val host: String,
-                          val port: Int,
-                          val database: String,
-                          val username: String,
-                          val password: String,
-                          val parentTable: String,
-                          val partitionDateField: Option[String],
-                          val partitionDateFormat: Option[String],
-                          val schemas: Map[String, String],
-                          val filterAppId: Option[String],
-                          deduplicationCacheRepository: Option[Cache[String, Boolean]],
-                          deduplicationField: String,
-                          override val tracker: Option[Tracker] = None
-                        ) extends BulkSender[EmitterJsonInput]
-  with UsingPostgres {
+  val host: String,
+  val port: Int,
+  val database: String,
+  val username: String,
+  val password: String,
+  val parentTable: String,
+  val partitionDateField: Option[String],
+  val partitionDateFormat: Option[String],
+  val schemas: Map[String, String],
+  val filterAppId: Option[String],
+  deduplicationCacheRepository: Option[Cache[String, Boolean]],
+  deduplicationField: String,
+  override val tracker: Option[Tracker] = None
+) extends BulkSender[EmitterJsonInput]
+    with UsingPostgres {
 
   val maxConnectionWaitTimeMs: Long = 10000
-  val maxAttempts: Int              = 2
+  val maxAttempts: Int = 2
 
   case object PostgresFilterTypes {
     val APP_ID = "app_id"
@@ -53,15 +53,14 @@ class BulkSenderPostgres(
     deduplicationCacheRepository match {
       case None => (List(), list)
       case Some(cache) =>
-        list.partition(
-          record =>
-            utils.JsonUtils.extractField(record.json, deduplicationField) match {
-              case Some(key) =>
-                val result = cache.getIfPresent(key).getOrElse(false)
-                cache.put(key, true)
-                result
-              case None => true // if the field doesn't exist, consider non-duplicated
-            }
+        list.partition(record =>
+          utils.JsonUtils.extractField(record.json, deduplicationField) match {
+            case Some(key) =>
+              val result = cache.getIfPresent(key).getOrElse(false)
+              cache.put(key, true)
+              result
+            case None => true // if the field doesn't exist, consider non-duplicated
+          }
         )
     }
 
@@ -73,7 +72,7 @@ class BulkSenderPostgres(
    * @return
    */
   def extractStringElementFromJson(key: String, json: JObject): Option[String] =
-  //If key exists
+    //If key exists
     if (json.values.keySet.contains(key)) {
       Try((json \\ key).extract[String]).toOption
     } else {
@@ -81,19 +80,19 @@ class BulkSenderPostgres(
     }
 
   def send(records: List[EmitterJsonInput]): List[EmitterJsonInput] = {
-    val connectionAttemptStartTime         = System.currentTimeMillis()
-    val (successes, oldFailures)           = records.partition(_._2.isSuccess)
-    val successfulRecordsToCheck           = successes.collect { case (_, Success(record)) => record }
+    val connectionAttemptStartTime = System.currentTimeMillis()
+    val (successes, oldFailures) = records.partition(_._2.isSuccess)
+    val successfulRecordsToCheck = successes.collect { case (_, Success(record)) => record }
     val (deduplication, successfulRecords) = deduplicate(successfulRecordsToCheck)
-    val filterVals                         = filterAppId.map(_.split(",").map(_.trim).toList).getOrElse(Nil)
+    val filterVals = filterAppId.map(_.split(",").map(_.trim).toList).getOrElse(Nil)
     val newFailures: List[EmitterJsonInput] = if (successfulRecords.nonEmpty) {
       successfulRecords
         .groupBy(r => r.partition)
         .mapValues { recordsForPartition =>
-        {
           if (filterVals.nonEmpty) {
             val filteredRecords = recordsForPartition.filter { rec =>
-              val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
+              val extractedValueOption =
+                extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
               extractedValueOption.exists(filterVals.contains)
             }
             filteredRecords
@@ -101,11 +100,10 @@ class BulkSenderPostgres(
             recordsForPartition
           }
         }
-        }
         .filter(_._2.nonEmpty)
         .map {
           case (partitionName, recordsForPartition) =>
-            futureToTask(Future { write(partitionName, recordsForPartition) })
+            futureToTask(Future(write(partitionName, recordsForPartition)))
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 {
@@ -128,9 +126,9 @@ class BulkSenderPostgres(
                 forceShutdown()
                 Nil
             }
-            // when partitioning is not active | TSDB
+          // when partitioning is not active | TSDB
           case (null, recordsForPartition) =>
-            futureToTask(Future { write(null, recordsForPartition) })
+            futureToTask(Future(write(null, recordsForPartition)))
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 {
@@ -156,11 +154,13 @@ class BulkSenderPostgres(
         }
         .flatten
         .toList
-    } else{
+    } else {
       Nil
     }
 
-    log.info(s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored")
+    log.info(
+      s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored"
+    )
     if (newFailures.nonEmpty) logHealth()
     val allFailures = oldFailures ++ newFailures
     if (allFailures.nonEmpty) log.warn(s"Returning ${allFailures.size} records as failed")
@@ -172,9 +172,9 @@ class BulkSenderPostgres(
 
   // https://www.postgresql.org/docs/current/errcodes-appendix.html
   def handleResponse(
-                      response: String,
-                      record: EmitterJsonInput
-                    ): Option[EmitterJsonInput] =
+    response: String,
+    record: EmitterJsonInput
+  ): Option[EmitterJsonInput] =
     if (response != "00000") { //failure
       Some(
         record._1.take(maxSizeWhenReportingFailure) ->

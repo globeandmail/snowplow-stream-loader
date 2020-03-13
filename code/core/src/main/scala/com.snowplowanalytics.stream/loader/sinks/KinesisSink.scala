@@ -75,7 +75,10 @@ class KinesisSink(
     .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
     .build()
 
-  require(streamExists(name), s"Stream $name doesn't exist or is neither active nor updating (deleted or creating)")
+  require(
+    streamExists(name),
+    s"Stream $name doesn't exist or is neither active nor updating (deleted or creating)"
+  )
 
   /**
    * Checks if a stream exists.
@@ -86,7 +89,7 @@ class KinesisSink(
   def streamExists(name: String): Boolean =
     try {
       val describeStreamResult = client.describeStream(name)
-      val status               = describeStreamResult.getStreamDescription.getStreamStatus
+      val status = describeStreamResult.getStreamDescription.getStreamStatus
       status == "ACTIVE" || status == "UPDATING"
     } catch {
       case rnfe: ResourceNotFoundException => false
@@ -144,8 +147,9 @@ class KinesisSink(
         case Some(filterValue) if filterValue.nonEmpty =>
           batch
             .map { rec =>
-              val extractedValueOption = extractStringElementFromJson(KinesisFilterTypes.APP_ID, rec._2)
-              val filterVals           = filterValue.split(",").map(_.trim)
+              val extractedValueOption =
+                extractStringElementFromJson(KinesisFilterTypes.APP_ID, rec._2)
+              val filterVals = filterValue.split(",").map(_.trim)
 
               extractedValueOption match {
                 //Return tsv string if we were able to successfully extract the key and find in filterVals
@@ -180,11 +184,14 @@ class KinesisSink(
           _._2.getErrorMessage != null
 
         }
-        log.info(s"Successfully wrote ${filteredBatch.size - failurePairs.size} out of ${filteredBatch.size} records")
+        log.info(
+          s"Successfully wrote ${filteredBatch.size - failurePairs.size} out of ${filteredBatch.size} records"
+        )
         if (failurePairs.nonEmpty) {
-          failurePairs.foreach(
-            f =>
-              log.error(s"Record failed with error code [${f._2.getErrorCode}] and message [${f._2.getErrorMessage}]")
+          failurePairs.foreach(f =>
+            log.error(
+              s"Record failed with error code [${f._2.getErrorCode}] and message [${f._2.getErrorMessage}]"
+            )
           )
           failurePairs.map(_._1)
         } else List()

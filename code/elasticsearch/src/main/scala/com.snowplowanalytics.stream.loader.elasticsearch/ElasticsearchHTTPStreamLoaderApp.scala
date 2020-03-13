@@ -60,7 +60,12 @@ object ElasticsearchHTTPStreamLoaderApp extends StreamLoaderApp {
         config.elasticsearch.get.cluster.refreshInterval.getOrElse("1m"),
         schema,
         CredentialsLookup
-          .getCredentialsProvider(config.aws.accessKey, config.aws.secretKey, config.aws.arnRole, config.aws.stsRegion),
+          .getCredentialsProvider(
+            config.aws.accessKey,
+            config.aws.secretKey,
+            config.aws.arnRole,
+            config.aws.stsRegion
+          ),
         tracker = tracker
       )
   }

@@ -57,10 +57,9 @@ trait StreamLoaderApp extends App {
         .required()
         .valueName("<filename>")
         .action((f: File, c: FileConfig) => c.copy(config = f))
-        .validate(
-          f =>
-            if (f.exists) success
-            else failure(s"Configurationfile $f does not exist")
+        .validate(f =>
+          if (f.exists) success
+          else failure(s"Configurationfile $f does not exist")
         )
     }
 
@@ -96,7 +95,8 @@ trait StreamLoaderApp extends App {
     config.aws.arnRole,
     config.aws.stsRegion
   )
-  lazy val tracker: Option[Tracker] = config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
+  lazy val tracker: Option[Tracker] =
+    config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
 
   lazy val goodSink: Option[ISink] = config.sink.good match {
     case "stdout"        => Some(new StdouterrSink)
@@ -168,9 +168,7 @@ trait StreamLoaderApp extends App {
     executor.fold(
       err => throw new RuntimeException(err),
       exec => {
-        tracker foreach { t =>
-          SnowplowTracking.initializeSnowplowTracking(t)
-        }
+        tracker foreach { t => SnowplowTracking.initializeSnowplowTracking(t) }
         exec.run()
         // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
         // application from exiting naturally so we explicitly call System.exit.

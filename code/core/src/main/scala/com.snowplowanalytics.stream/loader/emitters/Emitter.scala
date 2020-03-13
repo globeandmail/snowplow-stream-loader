@@ -62,7 +62,7 @@ class Emitter(
 ) extends IEmitter[EmitterJsonInput] {
 
   private val partitionKey = "domain_sessionid"
-  private val WAIT_TIME    = 100
+  private val WAIT_TIME = 100
 
   @throws[IOException]
   def emit(buffer: UnmodifiableBuffer[EmitterJsonInput]): List[EmitterJsonInput] =
@@ -86,8 +86,8 @@ class Emitter(
       // Send all valid records to stdout / Elasticsearch and return those rejected by Elasticsearch
       val rejects = goodSink match {
         case Some(s: StdouterrSink) => {
-          validRecords.foreach(
-            recordTuple => recordTuple.map(record => record.map(r => s.store(r.json.toString, None, true)))
+          validRecords.foreach(recordTuple =>
+            recordTuple.map(record => record.map(r => s.store(r.json.toString, None, true)))
           )
           Nil
         }
@@ -138,10 +138,10 @@ class Emitter(
     recordLimit: Long
   ): SList[SList[EmitterJsonInput]] = {
     // partition the records in
-    val remaining: ListBuffer[EmitterJsonInput]      = records.to[ListBuffer]
+    val remaining: ListBuffer[EmitterJsonInput] = records.to[ListBuffer]
     val buffers: ListBuffer[SList[EmitterJsonInput]] = new ListBuffer
-    val curBuffer: ListBuffer[EmitterJsonInput]      = new ListBuffer
-    var runningByteCount: Long                       = 0L
+    val curBuffer: ListBuffer[EmitterJsonInput] = new ListBuffer
+    var runningByteCount: Long = 0L
 
     while (remaining.nonEmpty) {
       val record = remaining.remove(0)

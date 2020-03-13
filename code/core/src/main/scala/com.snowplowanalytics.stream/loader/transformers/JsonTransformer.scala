@@ -59,12 +59,11 @@ class JsonTransformer(
 ) extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
-  val log           = LoggerFactory.getLogger(getClass)
+  val log = LoggerFactory.getLogger(getClass)
 
-  private val dateFormatter: Option[SimpleDateFormat] =   documentIndexSuffixFormat
-  match {
+  private val dateFormatter: Option[SimpleDateFormat] = documentIndexSuffixFormat match {
     case Some(format) if !(format.trim.isEmpty()) => new SimpleDateFormat(format).some
-    case _ => None
+    case _                                        => None
   }
 
   private val shardingField = documentIndexSuffixField.getOrElse("derived_tstamp")
@@ -98,8 +97,12 @@ class JsonTransformer(
   private def toJsonRecord(record: String): ValidationNel[String, JsonRecord] =
     jsonifyGoodEvent(
       record
-        .replace("\\u0000", "") // arc sends events with null character and postgres doesn't like it.
-        .split("\t", -1)) match {
+        .replace(
+          "\\u0000",
+          ""
+        ) // arc sends events with null character and postgres doesn't like it.
+        .split("\t", -1)
+    ) match {
       case Left(h :: t) => NonEmptyList(h, t: _*).failure
       case Left(Nil)    => "Empty list of failures but reported failure, should not happen".failureNel
       case Right((_, rawJson)) =>
@@ -116,9 +119,10 @@ class JsonTransformer(
                       .withZone(DateTimeZone.UTC)
                       .getMillis
                   )
-              case _ => throw new Exception(
-                documentIndexSuffixField + " is not a JString, so we cannot extract the value"
-              )
+              case _ =>
+                throw new Exception(
+                  documentIndexSuffixField + " is not a JString, so we cannot extract the value"
+                )
             }
 
             JsonRecord(json.asInstanceOf[JObject], shard).success

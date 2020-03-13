@@ -50,12 +50,19 @@ class SignedHttpClientConfigCallback(
   region: String
 ) extends HttpClientConfigCallback {
   private def clock(): LocalDateTime = LocalDateTime.now(ZoneId.of("UTC"))
-  private val service                = "es"
+  private val service = "es"
   private val signer =
-    AwsSigner(credentialsProvider, region, service, () => SignedHttpClientConfigCallback.this.clock())
+    AwsSigner(
+      credentialsProvider,
+      region,
+      service,
+      () => SignedHttpClientConfigCallback.this.clock()
+    )
 
   /** Add the signed headers to outgoing requests */
-  override def customizeHttpClient(httpClientBuilder: HttpAsyncClientBuilder): HttpAsyncClientBuilder =
+  override def customizeHttpClient(
+    httpClientBuilder: HttpAsyncClientBuilder
+  ): HttpAsyncClientBuilder =
     httpClientBuilder.addInterceptorLast(new HttpRequestInterceptor {
       override def process(request: HttpRequest, context: HttpContext): Unit =
         Try(request.asInstanceOf[HttpRequestWrapper]).foreach { rw =>

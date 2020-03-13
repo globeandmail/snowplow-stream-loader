@@ -50,28 +50,30 @@ object PostgresStreamLoaderApp extends App with StreamLoaderApp {
           dir.listFiles
             .filter(_.isFile)
             .toList
-            .filter { file =>
-              file.getName.endsWith(".sql")
-            }
-            .map(
-              file => (file.getName.replace(".sql", ""), Source.fromFile(file.getAbsolutePath).getLines.mkString("\n"))
+            .filter(file => file.getName.endsWith(".sql"))
+            .map(file =>
+              (
+                file.getName.replace(".sql", ""),
+                Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
+              )
             )
             .toMap
       }
 
-      val deduplicationCacheRepository: Option[Cache[String, Boolean]] = config.deduplicationCache match {
-        case Some(dcs) =>
-          if (!dcs.deduplicationEnabled) {
-            None
-          } else {
-            Scaffeine()
-              .expireAfterWrite(dcs.timeLimit.seconds)
-              .maximumSize(dcs.sizeLimit)
-              .build[String, Boolean]()
-              .some
-          }
-        case None => None
-      }
+      val deduplicationCacheRepository: Option[Cache[String, Boolean]] =
+        config.deduplicationCache match {
+          case Some(dcs) =>
+            if (!dcs.deduplicationEnabled) {
+              None
+            } else {
+              Scaffeine()
+                .expireAfterWrite(dcs.timeLimit.seconds)
+                .maximumSize(dcs.sizeLimit)
+                .build[String, Boolean]()
+                .some
+            }
+          case None => None
+        }
 
       val deduplicationField = config.deduplicationCache match {
         case Some(dcs) => dcs.deduplicationField
