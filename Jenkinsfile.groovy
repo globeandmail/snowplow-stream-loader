@@ -550,7 +550,7 @@ def tagRegularBranch(tagVersion, branchName){
 def getImageNamesAndBuildArgs(scmVars) {
     def buildPath = 'build.yaml'
 
-    def baseImageName = "harbor.sophi.io/sophi4/snowplow-stream-loader-"
+    def baseImageName = "harbor.sophi.io/sophi4/snowplow-stream-loader"
     def branchName = getBranchName(scmVars)
     def modules
     def imageName
