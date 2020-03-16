@@ -270,7 +270,7 @@ def getModuleSettings(String module, Map scmVars,String branchName,Boolean isPR)
                 else{
                     if(isPR){
                         def tagVersion = moduleEntry.value.tag_version
-                        def changeType = getLabel(branchName, component)
+                        def changeType = getLabel(branchName)
                         if(!isManualMode && changeType!=null){
                             newTag = incrementVersionAndCommit(tagVersion.toString(),
                                     changeType.toString(), branchName,buildPath,false,module
@@ -298,7 +298,7 @@ def getModuleSettings(String module, Map scmVars,String branchName,Boolean isPR)
 }
 
 
-def getDefaultBuildArgs(String component, Map scmVars) {
+def getDefaultBuildArgs(Map scmVars) {
     def buildPath = 'build.yaml'
 
     def data = readYaml(file: buildPath)
@@ -547,7 +547,7 @@ def tagRegularBranch(tagVersion, branchName){
     return imageTag
 }
 
-def getImageNamesAndBuildArgs(component, scmVars) {
+def getImageNamesAndBuildArgs(scmVars) {
     def buildPath = 'build.yaml'
 
     def baseImageName = "harbor.sophi.io/sophi4/snowplow-stream-loader-"
@@ -562,15 +562,15 @@ def getImageNamesAndBuildArgs(component, scmVars) {
     modules = getModules()
     if (modules == null || modules.isEmpty()) {
         // regular build with no modules
-        def buildArgs = getDefaultBuildArgs(component, scmVars)
+        def buildArgs = getDefaultBuildArgs(scmVars)
         if(branchName.contains("master")){
             imageTag = getDefaultTagVersion(buildPath)
             commitTagToGit(imageTag)
         }
         else if(scmVars.GIT_BRANCH.contains("PR-")){
-            labels = getLabel(scmVars.GIT_BRANCH.toString(), component)
+            labels = getLabel(scmVars.GIT_BRANCH.toString())
             imageTag = getDefaultTagVersion(buildPath)
-            // If build.yaml is not changed manually and component changed is api or dashboard
+            // If build.yaml is not changed manually 
             if(!isManualMode && labels!=null){
                 imageTag = incrementVersionAndCommit(imageTag.toString(),labels.toString(),branchName,buildPath,true)
             }
@@ -587,7 +587,7 @@ def getImageNamesAndBuildArgs(component, scmVars) {
                 imageTag = tagRegularBranch(imageTag,branchName)
             }
         }
-        imageName = baseImageName + component
+        imageName = baseImageName
         imageNamesAndBuildArgs.push([imageName: imageName, buildArgs: buildArgs, push: shallPush(buildPath),
                                      imageTag: imageTag.toString().toLowerCase(), prebuildCommands: getPrebuildCommands(buildPath)])
     } else {
@@ -702,7 +702,7 @@ podTemplate(label: label, containers: [
                                 wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm']) {
 
                                     sh("docker login -u ${HARBOR_ACCOUNT_USER} -p ${HARBOR_ACCOUNT_PASSWORD} harbor.sophi.io")
-                                    imageNamesAndBuildArgs = getImageNamesAndBuildArgs(component, scmVars)
+                                    imageNamesAndBuildArgs = getImageNamesAndBuildArgs(scmVars)
                                     imageNamesAndBuildArgs.each { item ->
                                         imageName = item.imageName
                                         buildArgs = item.buildArgs

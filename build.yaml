@@ -14,7 +14,3 @@ modules:
    push: false
    build_args:
    - PROTOCOL: s3
-
-
-
-
