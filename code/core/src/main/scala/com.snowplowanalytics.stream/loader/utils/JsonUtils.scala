@@ -31,7 +31,7 @@ import scala.util.{Failure, Success, Try}
 
 object JsonUtils {
   implicit val formats = DefaultFormats
-  val xpathPattern     = Pattern.compile("([A-Za-z0-9_]+)[\\[]*([0-9]*)[\\]]*")
+  val xpathPattern = Pattern.compile("([A-Za-z0-9_]+)[\\[]*([0-9]*)[\\]]*")
 
   // to rm once 2.12 as well as the right projections
   def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B = t match {
@@ -81,20 +81,16 @@ object JsonUtils {
   def removeNullAndEmpty(json: JValue): JValue =
     json removeField {
       case (_, JNull | JNothing) => true
-      case (_, JArray(arr)) => arr.isEmpty || arr == List(JObject(List())) || arr == List(JObject())
-      case (_, JObject(kv)) => kv.isEmpty
-      case (k, _)           => false
+      case (_, JArray(arr))      => arr.isEmpty || arr == List(JObject(List())) || arr == List(JObject())
+      case (_, JObject(kv))      => kv.isEmpty
+      case (k, _)                => false
     }
 
   def camelToSnake(name: String) =
-    "[A-Z\\d]".r.replaceAllIn(name, { m =>
-      "_" + m.group(0).toLowerCase()
-    })
+    "[A-Z\\d]".r.replaceAllIn(name, m => "_" + m.group(0).toLowerCase())
 
   def snakeToCamel(name: String) =
-    "_([a-z\\d])".r.replaceAllIn(name, { m =>
-      m.group(1).toUpperCase()
-    })
+    "_([a-z\\d])".r.replaceAllIn(name, m => m.group(1).toUpperCase())
 
   def denormalizeEvent(json: JValue): JValue = {
     val deprecatedFields = List(
@@ -208,10 +204,20 @@ object JsonUtils {
       "pp_yoffset_min"
     )
 
-    val structuredUnstructFields = List("se_action", "se_category", "se_label", "se_property", "se_value")
+    val structuredUnstructFields =
+      List("se_action", "se_category", "se_label", "se_property", "se_value")
 
     val transactionItemsContextsFields =
-      List("ti_category", "ti_currency", "ti_name", "ti_orderid", "ti_price", "ti_price_base", "ti_quantity", "ti_sku")
+      List(
+        "ti_category",
+        "ti_currency",
+        "ti_name",
+        "ti_orderid",
+        "ti_price",
+        "ti_price_base",
+        "ti_quantity",
+        "ti_sku"
+      )
 
     val trasactionUnstuct = List(
       "base_currency",
@@ -233,7 +239,7 @@ object JsonUtils {
       "user_id",
       "domain_userid",
       "domain_sessionid",
-      "contexts_com_globeandmail_content_1[0].contentId",               //camelCase: coming from contexts schema
+      "contexts_com_globeandmail_content_1[0].contentId", //camelCase: coming from contexts schema
       "contexts_com_globeandmail_device_detector_1[0].visitorPlatform", //camelCase: coming from contexts schema
       "refr_medium",
       "page_urlpath",
@@ -260,7 +266,9 @@ object JsonUtils {
           JArray(
             List(
               JObject(
-                snowplowContext.map(field => JField(snakeToCamel(field), json \ field)).filter(_._2 != JNull)
+                snowplowContext
+                  .map(field => JField(snakeToCamel(field), json \ field))
+                  .filter(_._2 != JNull)
               )
             )
           )
@@ -271,18 +279,17 @@ object JsonUtils {
     val filtered = json transform {
       case JObject(l) =>
         JObject(
-          l.filter(
-            kv =>
-              !(
-                deprecatedFields ++
-                  snowplowContext ++
-                  pagePingUnstructFields ++
-                  structuredUnstructFields ++
-                  transactionItemsContextsFields ++
-                  trasactionUnstuct
-              ).contains(kv._1)
-                && !kv._1.startsWith("unstruct_")
-                && !kv._1.startsWith("contexts_")
+          l.filter(kv =>
+            !(
+              deprecatedFields ++
+                snowplowContext ++
+                pagePingUnstructFields ++
+                structuredUnstructFields ++
+                transactionItemsContextsFields ++
+                trasactionUnstuct
+            ).contains(kv._1)
+              && !kv._1.startsWith("unstruct_")
+              && !kv._1.startsWith("contexts_")
           )
         )
     }
@@ -325,8 +332,11 @@ object JsonUtils {
     val result = filtered merge JObject(JField("contexts", contexts)) merge
       JObject(
         importantFieldsXPath
-          .map(
-            xpath => JField(camelToSnake(fieldFromXPath(xpath)), JString(extractValueFromXPath[String](json, xpath)))
+          .map(xpath =>
+            JField(
+              camelToSnake(fieldFromXPath(xpath)),
+              JString(extractValueFromXPath[String](json, xpath))
+            )
           )
           .filter(_._2 != JObject(List()))
       )
@@ -357,7 +367,7 @@ object JsonUtils {
           case (acc: JValue, node: String) =>
             val matcher = xpathPattern.matcher(node)
             if (matcher.find()) {
-              val fieldName  = matcher.group(1)
+              val fieldName = matcher.group(1)
               val fieldIndex = matcher.group(2)
               if (fieldIndex == "") {
                 acc \ fieldName

@@ -42,10 +42,10 @@ object SnowplowTracking {
    */
   def initializeTracker(config: SnowplowMonitoringConfig): Tracker = {
     val endpoint = config.collectorUri
-    val port     = Some(config.collectorPort)
-    val appName  = config.appId
+    val port = Some(config.collectorPort)
+    val appName = config.appId
     // Not yet used
-    val method  = config.method // TODO: use it somehow!!
+    val method = config.method // TODO: use it somehow!!
     val emitter = AsyncBatchEmitter.createAndStart(endpoint, port, bufferSize = 32) // TODO: add buffer to the config, buffer is with post though
     new Tracker(List(emitter), appName, appName)
   }
@@ -69,12 +69,16 @@ object SnowplowTracking {
   ): Unit =
     tracker.trackSelfDescribingEvent(
       SelfDescribingData(
-        SchemaKey.fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0").get,
-        ("storage"              -> storageType) ~
-          ("failureCount"       -> failureCount) ~
+        SchemaKey
+          .fromUri(
+            "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0"
+          )
+          .get,
+        ("storage" -> storageType) ~
+          ("failureCount" -> failureCount) ~
           ("initialFailureTime" -> initialFailureTime) ~
-          ("lastRetryPeriod"    -> lastRetryPeriod) ~
-          ("message"            -> message)
+          ("lastRetryPeriod" -> lastRetryPeriod) ~
+          ("message" -> message)
       )
     )
 
@@ -110,7 +114,9 @@ object SnowplowTracking {
   private def trackApplicationInitialization(tracker: Tracker): Unit =
     tracker.trackSelfDescribingEvent(
       SelfDescribingData(
-        SchemaKey.fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0").get,
+        SchemaKey
+          .fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0")
+          .get,
         JObject(Nil) // TODO: fill applicationName
       )
     )
@@ -123,7 +129,9 @@ object SnowplowTracking {
   def trackApplicationShutdown(tracker: Tracker): Unit =
     tracker.trackSelfDescribingEvent(
       SelfDescribingData(
-        SchemaKey.fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0").get,
+        SchemaKey
+          .fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0")
+          .get,
         JObject(Nil)
       )
     )
@@ -137,7 +145,9 @@ object SnowplowTracking {
   private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long): Unit =
     tracker.trackSelfDescribingEvent(
       SelfDescribingData(
-        SchemaKey.fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0").get,
+        SchemaKey
+          .fromUri("iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0")
+          .get,
         "interval" -> heartbeatInterval
       )
     )

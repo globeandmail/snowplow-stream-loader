@@ -62,7 +62,7 @@ class BulkSenderHTTP(
   password: Option[String],
   ssl: Boolean,
   override val maxConnectionWaitTimeMs: Long = 60000L,
-  override val maxAttempts: Int              = 6,
+  override val maxAttempts: Int = 6,
   indexName: String,
   documentType: String,
   streamType: StreamType,
@@ -84,15 +84,22 @@ class BulkSenderHTTP(
     else NoOpHttpClientConfigCallback
 
   private val formedHost =
-    new HttpHost(endpoint, port, if (uri.options.getOrElse("ssl", "false") == "true") "https" else "http")
+    new HttpHost(
+      endpoint,
+      port,
+      if (uri.options.getOrElse("ssl", "false") == "true") "https" else "http"
+    )
   private val restClientBuilder = RestClient
     .builder(formedHost)
-    .setHttpClientConfigCallback(httpClientConfigCallback.asInstanceOf[RestClientBuilder.HttpClientConfigCallback])
+    .setHttpClientConfigCallback(
+      httpClientConfigCallback.asInstanceOf[RestClientBuilder.HttpClientConfigCallback]
+    )
 
   private val thriftDeserializer = new TDeserializer()
 
   if (username.orNull != null && password.orNull != null) {
-    val userpass               = BaseEncoding.base64().encode(s"${username.get}:${password.get}".getBytes(Charsets.UTF_8))
+    val userpass =
+      BaseEncoding.base64().encode(s"${username.get}:${password.get}".getBytes(Charsets.UTF_8))
     val headers: Array[Header] = Array(new BasicHeader("Authorization", s"Basic $userpass"))
     restClientBuilder.setDefaultHeaders(headers)
   }
@@ -125,8 +132,9 @@ class BulkSenderHTTP(
           case None => r.json
         }
         utils.JsonUtils.extractEventId(r.json) match {
-          case Some(id) => new ElasticsearchObject(index, documentType, id, compact(render(jsonToSend)))
-          case None     => new ElasticsearchObject(index, documentType, compact(render(jsonToSend)))
+          case Some(id) =>
+            new ElasticsearchObject(index, documentType, id, compact(render(jsonToSend)))
+          case None => new ElasticsearchObject(index, documentType, compact(render(jsonToSend)))
         }
     }
 
@@ -136,17 +144,16 @@ class BulkSenderHTTP(
         successfulRecords
           .map(_.getIndex)
           .toSet[String]
-          .map(
-            index =>
-              client.execute {
-                createIndex(index)
-                  .shards(shardsCount)
-                  .replicas(replicasCount)
-                  .refreshInterval(refreshInterval)
-                  .mappings(
-                    MappingDefinition(`type` = documentType, rawSource = Some(source))
-                  )
-              }.await
+          .map(index =>
+            client.execute {
+              createIndex(index)
+                .shards(shardsCount)
+                .replicas(replicasCount)
+                .refreshInterval(refreshInterval)
+                .mappings(
+                  MappingDefinition(`type` = documentType, rawSource = Some(source))
+                )
+            }.await
           )
       case _ =>
     }
@@ -223,7 +230,9 @@ class BulkSenderHTTP(
     error.foreach(e => log.error(s"Record [$record] failed with message $e"))
     error
       .map { e =>
-        if (e.contains("DocumentAlreadyExistsException") || e.contains("VersionConflictEngineException"))
+        if (e.contains("DocumentAlreadyExistsException") || e.contains(
+              "VersionConflictEngineException"
+            ))
           None
         else
           Some(

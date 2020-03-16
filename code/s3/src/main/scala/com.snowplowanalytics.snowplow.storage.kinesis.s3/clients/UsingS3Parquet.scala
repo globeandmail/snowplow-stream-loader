@@ -29,27 +29,29 @@ trait UsingS3Parquet {
 
   val conf = new Configuration()
   //Based on  https://docs.oracle.com/database/nosql-12.1.3.0/GettingStartedGuide/avroschemas.html
-  val avroPrimitiveTypes: Seq[Type] = Seq(Type.STRING,Type.INT,Type.DOUBLE,Type.LONG,Type.FLOAT,Type.BOOLEAN)
+  val avroPrimitiveTypes: Seq[Type] =
+    Seq(Type.STRING, Type.INT, Type.DOUBLE, Type.LONG, Type.FLOAT, Type.BOOLEAN)
   if (accessKey != "iam" && secretKey != "iam") {
     conf.set("fs.s3a.access.key", accessKey)
     conf.set("fs.s3a.secret.key", secretKey)
   } else {
     conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-    conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.InstanceProfileCredentialsProvider")
+    conf.set(
+      "fs.s3a.aws.credentials.provider",
+      "com.amazonaws.auth.InstanceProfileCredentialsProvider"
+    )
   }
-
 
   object SchemaHandler {
     var schema: Schema = null
-    val SAMPLE_SIZE    = 500
+    val SAMPLE_SIZE = 500
 
     def takeSample(records: List[JsonNode]): Iterable[JsonNode] =
       records
-        .groupBy(
-          jsonNode =>
-            jsonNode.get("event_vendor").asText + "." +
-              jsonNode.get("event_name").asText + "." +
-              jsonNode.get("event_version").asText
+        .groupBy(jsonNode =>
+          jsonNode.get("event_vendor").asText + "." +
+            jsonNode.get("event_name").asText + "." +
+            jsonNode.get("event_version").asText
         )
         .flatMap {
           case (_, values) =>
@@ -69,7 +71,7 @@ trait UsingS3Parquet {
         .reduceLeft((right, left) => SchemaUtil.merge(right, left))
 
       if (schema == null) schema = result
-      else schema                = SchemaUtil.mergeOrUnion(List(schema, result).asJava)
+      else schema = SchemaUtil.mergeOrUnion(List(schema, result).asJava)
       schema
     }
   }
@@ -96,8 +98,8 @@ trait UsingS3Parquet {
             .asScala
             .toList
             .map { r =>
-              {
-                val schemaForTheElement = if (schema.getField(v.getKey).schema().getType == Type.UNION) {
+              val schemaForTheElement =
+                if (schema.getField(v.getKey).schema().getType == Type.UNION) {
                   schema
                     .getField(v.getKey)
                     .schema()
@@ -109,20 +111,19 @@ trait UsingS3Parquet {
                 } else {
                   schema.getField(v.getKey).schema().getElementType
                 }
-                //If array internal type is complex only then we create Generic Record Type
-                if(!avroPrimitiveTypes.contains(schemaForTheElement.getType)){
-                  convertJsonNodeToAvroRecord(r, schemaForTheElement) match {
-                    case Right(record)                     => record
-                    case Left((throwable, jsonNodeRecord)) => throw throwable
-                  }
+              //If array internal type is complex only then we create Generic Record Type
+              if (!avroPrimitiveTypes.contains(schemaForTheElement.getType)) {
+                convertJsonNodeToAvroRecord(r, schemaForTheElement) match {
+                  case Right(record)                     => record
+                  case Left((throwable, jsonNodeRecord)) => throw throwable
                 }
-                  //If type is primitive we will extract it as Text
-                else{
-                  primtiveInternalObjects = true
-                  r.asText()
-                }
-
               }
+              //If type is primitive we will extract it as Text
+              else {
+                primtiveInternalObjects = true
+                r.asText()
+              }
+
             }
             .asJava
           val objectSchema = if (schema.getField(v.getKey).schema().getType == Type.UNION) {
@@ -132,8 +133,16 @@ trait UsingS3Parquet {
           }
           //if internal array type is primitive then create array of string else GenRecord
           val avroArray = primtiveInternalObjects match {
-            case true => new GenericData.Array[String](objectSchema, internalObjects.asScala.map(_.asInstanceOf[String]).asJava)
-            case false => new GenericData.Array[GenericData.Record](objectSchema, internalObjects.asScala.map(_.asInstanceOf[GenericData.Record]).asJava)
+            case true =>
+              new GenericData.Array[String](
+                objectSchema,
+                internalObjects.asScala.map(_.asInstanceOf[String]).asJava
+              )
+            case false =>
+              new GenericData.Array[GenericData.Record](
+                objectSchema,
+                internalObjects.asScala.map(_.asInstanceOf[GenericData.Record]).asJava
+              )
           }
           output.put(v.getKey, avroArray)
         } else if (v.getValue.isObject) {
@@ -165,15 +174,13 @@ trait UsingS3Parquet {
     }
   }
 
-  private def initializeWriter(path: String, schema: Schema) = {
+  private def initializeWriter(path: String, schema: Schema) =
     AvroParquetWriter
       .builder[GenericData.Record](new Path(path))
       .withConf(conf)
       .withCompressionCodec(CompressionCodecName.GZIP)
       .withSchema(schema)
       .build()
-  }
-
 
   /**
    * Avro gets mad when writing null values or empty list/objects. Its documentation says just ignore da data!
@@ -183,11 +190,10 @@ trait UsingS3Parquet {
   protected def cleanUpRecords(records: List[JsonRecord]) = {
     // Kite SDK doesn't like BigInteger (default)
     mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-    records.map(
-      r =>
-        asJsonNode(
-          utils.JsonUtils.removeNullAndEmpty(r.json)
-        )
+    records.map(r =>
+      asJsonNode(
+        utils.JsonUtils.removeNullAndEmpty(r.json)
+      )
     )
   }
 
@@ -200,8 +206,9 @@ trait UsingS3Parquet {
    */
   def write(partition: String, records: List[JsonNode]): Array[Int] = {
     val path = (partitionDateField, partition) match {
-      case (Some(partitionDateFieldValue), partitionValue) => s"/$partitionDateFieldValue=$partitionValue/"
-      case (None, null)                                    => "/"
+      case (Some(partitionDateFieldValue), partitionValue) =>
+        s"/$partitionDateFieldValue=$partitionValue/"
+      case (None, null) => "/"
     }
     val fileName = "events-" + System.currentTimeMillis() + ".parquet.gz"
     // sampling idea didn't work. The parquet writer has schema and also every avro record. all of them should match
@@ -209,13 +216,13 @@ trait UsingS3Parquet {
     val schema = SchemaHandler.inferAvroSchema(records)
 
     val convertedRecords = records
-      .map { jsonNodeRecord =>
-        convertJsonNodeToAvroRecord(jsonNodeRecord, schema)
-      }
+      .map(jsonNodeRecord => convertJsonNodeToAvroRecord(jsonNodeRecord, schema))
       .map {
         case Right(avroRecord) => avroRecord
         case Left((throwable, jsonNodeRecord)) =>
-          log.warn(s"The initial schema did not cover the record, inferring the schema: ${jsonNodeRecord.toString}")
+          log.warn(
+            s"The initial schema did not cover the record, inferring the schema: ${jsonNodeRecord.toString}"
+          )
           // let's ignore such records for now because we cannot change the schema as we go. we have to process for all records
           null
         /* convertJsonNodeToAvroRecord(jsonNodeRecord, SchemaHandler.inferAvroSchema(List(jsonNodeRecord))) match {
@@ -233,7 +240,6 @@ trait UsingS3Parquet {
         Try(s3Writer.write(avroRecord)) match {
           case Success(_) => 0
           case Failure(exception) =>
-
             log.error("error when writing Avro record in Parquet file", exception)
 
             -2 // parquet writer issue

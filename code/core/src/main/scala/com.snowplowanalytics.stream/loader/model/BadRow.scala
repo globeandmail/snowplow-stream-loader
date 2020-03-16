@@ -45,8 +45,8 @@ case class BadRow(line: String, errors: NonEmptyList[String]) {
   private val errs = errors.map(toProcessingMessage)
 
   def toCompactJson: String = compact(
-    ("line"             -> line) ~
-      ("errors"         -> errs.toList.map(e => fromJsonNode(e.asJson))) ~
+    ("line" -> line) ~
+      ("errors" -> errs.toList.map(e => fromJsonNode(e.asJson))) ~
       ("failure_tstamp" -> getTstamp(tstamp, tstampFormat))
   )
 }

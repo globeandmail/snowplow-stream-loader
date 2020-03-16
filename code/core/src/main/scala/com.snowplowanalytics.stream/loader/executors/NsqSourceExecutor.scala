@@ -75,7 +75,8 @@ class NsqSourceExecutor(
   /**
    * Consumer will be started to wait new message.
    */
-  override def run(): Unit = { /*
+  override def run(): Unit = {
+    /*
     val nsqCallback = new NSQMessageCallback {
       val nsqBufferSize = config.streams.buffer.recordLimit
 
@@ -109,5 +110,6 @@ class NsqSourceExecutor(
                                    nsqCallback,
                                    new NSQConfig(),
                                    errorCallback)
-    consumer.start() */ }
+    consumer.start() */
+  }
 }

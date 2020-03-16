@@ -61,7 +61,7 @@ lazy val allSettings = buildSettings ++
 
 lazy val root = project.in(file("."))
   .settings(buildSettings)
-  .aggregate(core, elasticsearch, postgres, s3)
+  .aggregate(core, elasticsearch, postgres, s3, tsdb)
 
 lazy val core = project
   .settings(moduleName := "snowplow-stream-loader-core")
@@ -88,6 +88,16 @@ lazy val postgres = project
   .settings(libraryDependencies ++= Seq (
   Dependencies.Libraries.commonsDbcp,
   Dependencies.Libraries.postgresql))
+  .dependsOn(core)
+
+// project dealing with tsdb
+lazy val tsdb = project
+  .settings(moduleName := "snowplow-stream-loader-tsdb")
+  .settings(allSettings)
+  //.settings(resolvers ++= Seq( "Maven2 Central Repository" at "http://central.maven.org/maven2/"))
+  .settings(libraryDependencies ++= Seq (
+    Dependencies.Libraries.commonsDbcp,
+    Dependencies.Libraries.postgresql))
   .dependsOn(core)
 
 // project dealing with S3

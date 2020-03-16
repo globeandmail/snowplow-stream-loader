@@ -32,22 +32,22 @@ class BulkSenderS3Parquet(
     with UsingS3Parquet {
 
   val maxConnectionWaitTimeMs: Long = 10000
-  val maxAttempts: Int              = 2
-  val LOG                           = LoggerFactory.getLogger(getClass)
+  val maxAttempts: Int = 2
+  val LOG = LoggerFactory.getLogger(getClass)
 
   // do not close the es client, otherwise it will fail when resharding
   def close(): Unit = ()
 
   def send(records: List[EmitterJsonInput]): List[EmitterJsonInput] = {
     val connectionAttemptStartTime = System.currentTimeMillis()
-    val (successes, oldFailures)   = records.partition(_._2.isSuccess)
-    val successfulRecords          = successes.collect { case (_, Success(record)) => record }
+    val (successes, oldFailures) = records.partition(_._2.isSuccess)
+    val successfulRecords = successes.collect { case (_, Success(record)) => record }
     val newFailures: List[EmitterJsonInput] = if (successfulRecords.nonEmpty) {
       successfulRecords
         .groupBy(r => r.partition)
         .map({
           case (partitionName, recordsForPartition) =>
-            futureToTask(Future { write(partitionName, cleanUpRecords(recordsForPartition)) })
+            futureToTask(Future(write(partitionName, cleanUpRecords(recordsForPartition))))
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 { response =>

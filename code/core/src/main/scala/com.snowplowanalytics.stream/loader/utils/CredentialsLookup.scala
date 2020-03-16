@@ -52,11 +52,15 @@ object CredentialsLookup {
       } else if (isIam(a) && isIam(s)) {
         InstanceProfileCredentialsProvider.getInstance()
       } else if (isIam(a) || isIam(s)) {
-        throw new RuntimeException("access-key and secret-key must both be set to 'iam', or neither")
+        throw new RuntimeException(
+          "access-key and secret-key must both be set to 'iam', or neither"
+        )
       } else if (isEnv(a) && isEnv(s)) {
         new EnvironmentVariableCredentialsProvider()
       } else if (isEnv(a) || isEnv(s)) {
-        throw new RuntimeException("access-key and secret-key must both be set to 'env', or neither")
+        throw new RuntimeException(
+          "access-key and secret-key must both be set to 'env', or neither"
+        )
       } else {
         new BasicAWSCredentialsProvider(new BasicAWSCredentials(a, s))
       }
@@ -109,6 +113,6 @@ object CredentialsLookup {
   // Wrap BasicAWSCredential objects.
   class BasicAWSCredentialsProvider(basic: BasicAWSCredentials) extends AWSCredentialsProvider {
     @Override def getCredentials: AWSCredentials = basic
-    @Override def refresh                        = {}
+    @Override def refresh = {}
   }
 }

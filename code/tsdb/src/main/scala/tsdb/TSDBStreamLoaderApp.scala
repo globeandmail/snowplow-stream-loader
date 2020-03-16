@@ -18,7 +18,7 @@
  */
 package loader
 
-import clients.{BulkSender, BulkSenderPostgres}
+import clients.{BulkSender, BulkSenderTSDB}
 import com.snowplowanalytics.stream.loader.{EmitterJsonInput, ValidatedJsonRecord}
 import executors.KinesisSourceExecutor
 import model.Config.Kinesis
@@ -34,61 +34,62 @@ import scala.io.Source
 import scalaz._
 import Scalaz._
 
-/** Main entry point for the Postgres sink */
-object PostgresStreamLoaderApp extends App with StreamLoaderApp {
+/** Main entry point for the tsdb sink */
+object TSDBStreamLoaderApp extends App with StreamLoaderApp {
   override lazy val arguments = args
 
-  lazy val bulkSender: BulkSender[EmitterJsonInput] = config.postgres match {
+  lazy val bulkSender: BulkSender[EmitterJsonInput] = config.tsdb match {
     case None =>
-      throw new RuntimeException("No configuration for Postgres found.")
+      throw new RuntimeException("No configuration for tsdb found.")
 
     case _ =>
-      val dir = new File(config.postgres.get.schemas)
+      val dir = new File(config.tsdb.get.schemas)
       val schemas: Map[String, String] = dir.exists && dir.isDirectory match {
         case false => throw new RuntimeException("No schema directory found")
         case true =>
           dir.listFiles
             .filter(_.isFile)
             .toList
-            .filter { file =>
-              file.getName.endsWith(".sql")
-            }
-            .map(
-              file => (file.getName.replace(".sql", ""), Source.fromFile(file.getAbsolutePath).getLines.mkString("\n"))
+            .filter(file => file.getName.endsWith(".sql"))
+            .map(file =>
+              (
+                file.getName.replace(".sql", ""),
+                Source.fromFile(file.getAbsolutePath).getLines.mkString("\n")
+              )
             )
             .toMap
       }
 
-      val deduplicationCacheRepository: Option[Cache[String, Boolean]] = config.deduplicationCache match {
-        case Some(dcs) =>
-          if (!dcs.deduplicationEnabled) {
-            None
-          } else {
-            Scaffeine()
-              .expireAfterWrite(dcs.timeLimit.seconds)
-              .maximumSize(dcs.sizeLimit)
-              .build[String, Boolean]()
-              .some
-          }
-        case None => None
-      }
+      val deduplicationCacheRepository: Option[Cache[String, Boolean]] =
+        config.deduplicationCache match {
+          case Some(dcs) =>
+            if (!dcs.deduplicationEnabled) {
+              None
+            } else {
+              Scaffeine()
+                .expireAfterWrite(dcs.timeLimit.seconds)
+                .maximumSize(dcs.sizeLimit)
+                .build[String, Boolean]()
+                .some
+            }
+          case None => None
+        }
 
       val deduplicationField = config.deduplicationCache match {
         case Some(dcs) => dcs.deduplicationField
         case None      => null
       }
 
-      new BulkSenderPostgres(
-        config.postgres.get.server,
-        config.postgres.get.port,
-        config.postgres.get.databaseName,
-        config.postgres.get.username,
-        config.postgres.get.password,
-        config.postgres.get.table,
-        config.postgres.get.shardTableDateField,
-        config.postgres.get.shardTableDateFormat,
+      new BulkSenderTSDB(
+        config.tsdb.get.server,
+        config.tsdb.get.port,
+        config.tsdb.get.databaseName,
+        config.tsdb.get.username,
+        config.tsdb.get.password,
+        config.tsdb.get.table,
+        config.tsdb.get.shardTableDateField,
         schemas,
-        config.postgres.flatMap(_.filterAppId),
+        config.tsdb.flatMap(_.filterAppId),
         deduplicationCacheRepository,
         deduplicationField
       )
@@ -107,9 +108,9 @@ object PostgresStreamLoaderApp extends App with StreamLoaderApp {
             queueConfig.initialWCU,
             new KinesisPipeline(
               config.streamType,
-              config.postgres.get.table,
-              config.postgres.get.shardTableDateField,
-              config.postgres.get.shardTableDateFormat,
+              config.tsdb.get.table,
+              config.tsdb.get.shardTableDateField,
+              config.tsdb.get.shardTableDateFormat,
               config.mappingTable,
               goodSink,
               badSink,

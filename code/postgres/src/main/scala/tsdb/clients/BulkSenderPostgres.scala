@@ -42,7 +42,7 @@ class BulkSenderPostgres(
     with UsingPostgres {
 
   val maxConnectionWaitTimeMs: Long = 10000
-  val maxAttempts: Int              = 2
+  val maxAttempts: Int = 2
 
   case object PostgresFilterTypes {
     val APP_ID = "app_id"
@@ -54,15 +54,14 @@ class BulkSenderPostgres(
     deduplicationCacheRepository match {
       case None => (List(), list)
       case Some(cache) =>
-        list.partition(
-          record =>
-            utils.JsonUtils.extractField(record.json, deduplicationField) match {
-              case Some(key) =>
-                val result = cache.getIfPresent(key).getOrElse(false)
-                cache.put(key, true)
-                result
-              case None => true // if the field doesn't exist, consider non-duplicated
-            }
+        list.partition(record =>
+          utils.JsonUtils.extractField(record.json, deduplicationField) match {
+            case Some(key) =>
+              val result = cache.getIfPresent(key).getOrElse(false)
+              cache.put(key, true)
+              result
+            case None => true // if the field doesn't exist, consider non-duplicated
+          }
         )
     }
 
@@ -82,29 +81,28 @@ class BulkSenderPostgres(
     }
 
   def send(records: List[EmitterJsonInput]): List[EmitterJsonInput] = {
-    val connectionAttemptStartTime         = System.currentTimeMillis()
-    val (successes, oldFailures)           = records.partition(_._2.isSuccess)
-    val successfulRecordsToCheck           = successes.collect { case (_, Success(record)) => record }
+    val connectionAttemptStartTime = System.currentTimeMillis()
+    val (successes, oldFailures) = records.partition(_._2.isSuccess)
+    val successfulRecordsToCheck = successes.collect { case (_, Success(record)) => record }
     val (deduplication, successfulRecords) = deduplicate(successfulRecordsToCheck)
-    val filterVals                         = filterAppId.map(_.split(",").map(_.trim).toList).getOrElse(Nil)
+    val filterVals = filterAppId.map(_.split(",").map(_.trim).toList).getOrElse(Nil)
     val newFailures: List[EmitterJsonInput] = if (successfulRecords.nonEmpty) {
       successfulRecords
         .groupBy(r => r.partition)
         .mapValues { recordsForPartition =>
-          {
-            if (filterVals.nonEmpty) {
-              val filteredRecords = recordsForPartition.filter { rec =>
-                val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
-                extractedValueOption.exists(filterVals.contains)
-              }
-              filteredRecords
-            } else recordsForPartition
-          }
+          if (filterVals.nonEmpty) {
+            val filteredRecords = recordsForPartition.filter { rec =>
+              val extractedValueOption =
+                extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
+              extractedValueOption.exists(filterVals.contains)
+            }
+            filteredRecords
+          } else recordsForPartition
         }
         .filter(_._2.nonEmpty)
         .map {
           case (partitionName, recordsForPartition) =>
-            futureToTask(Future { write(partitionName, recordsForPartition) })
+            futureToTask(Future(write(partitionName, recordsForPartition)))
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 {
@@ -132,7 +130,9 @@ class BulkSenderPostgres(
         .toList
     } else Nil
 
-    log.info(s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored")
+    log.info(
+      s"Emitted ${successfulRecords.size - newFailures.size} records, ${deduplication.size} duplicated ignored"
+    )
     if (newFailures.nonEmpty) logHealth()
     val allFailures = oldFailures ++ newFailures
     if (allFailures.nonEmpty) log.warn(s"Returning ${allFailures.size} records as failed")
