@@ -714,7 +714,7 @@ podTemplate(label: label, containers: [
                                             command ->
                                                 print sh(script: "${command}", returnStdout: true)
                                         }
-                                        sh("docker build --network host ${buildArgs} -t ${imageName}:${imageTag}" .)
+                                        sh("docker build --network host ${buildArgs} -t ${imageName}:${imageTag} .")
                                         if (shallPushImage) {
                                             sh("docker push ${imageName}")
                                         }
