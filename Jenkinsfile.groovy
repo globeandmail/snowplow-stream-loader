@@ -44,10 +44,7 @@ def extractAppsToDeploy(String fileChanges) {
         if (path.length >= 2) { // If there are only 3 parts or less, the file modified doesn't belong to a project
             for (i = 0; i < path.length; i++) {
                 if (i + 1 <= path.length) { // not the last item
-                    if(path[-1]=="Dockerfile" || (path[0] == "code" && (path[i] == "core" || path[i] == "examples" || path[i] == "project"))){
-                        applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
-                    }
-                    if (path[0] == "code" && path[i] == "elasticsearch") {
+                   /* if (path[0] == "code" && path[i] == "elasticsearch") {
                         applications.push('loader~elasticsearch')
                         echo "loader~elasticsearch"
                     }
@@ -59,6 +56,10 @@ def extractAppsToDeploy(String fileChanges) {
                         applications.push('loader~s3')
                         echo "loader~s3"
                     }
+                    else {
+                        applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
+                    } */
+                    applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
                 }
             }
         }
@@ -596,7 +597,7 @@ def getImageNamesAndBuildArgs(component, scmVars) {
         modules.each { moduleName ->
             def moduleSettings = []
 
-            moduleSettings = getModuleSettings(component, moduleName, scmVars,branchName,false)
+            moduleSettings = getModuleSettings(moduleName, scmVars,branchName,false)
             buildPath = 'build.yaml'
             if(getBranchName(scmVars).contains("master")){
                 imageTag = moduleSettings.tagVersion[0]
@@ -604,7 +605,7 @@ def getImageNamesAndBuildArgs(component, scmVars) {
                 imageTags.push(imageTag)
             }
             else if(scmVars.GIT_BRANCH.contains("PR-")){
-                moduleSettings = getModuleSettings(component, moduleName, scmVars,branchName,true)
+                moduleSettings = getModuleSettings(moduleName, scmVars,branchName,true)
                 //First do all module commits and git push once
                 if(modules.indexOf(moduleName)==modules.size()-1 && !isManualMode){
                     echo "Inside gitPush"
@@ -629,15 +630,6 @@ def getImageNamesAndBuildArgs(component, scmVars) {
     }
 
     return imageNamesAndBuildArgs
-}
-
-def setupKubeconfig() {
-    env.KUBECONFIG = 'kubeconfig'
-    sh(surpressCmdOutput('echo "$KUBECONFIG_CONTENT" > $KUBECONFIG'))
-}
-
-def surpressCmdOutput(cmd) {
-    return '#!/bin/sh -e\n' + cmd
 }
 
 def shallPush(String buildPath) {
