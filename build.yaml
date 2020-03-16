@@ -1,6 +1,7 @@
 modules:
 - postgres:
     tag_version: 0.10.10
+    push: false
     build_args:
     - PROTOCOL: postgres
 - elasticsearch:
@@ -8,3 +9,12 @@ modules:
     push: false
     build_args:
     - PROTOCOL: elasticsearch
+- s3:
+   tag_version: 0.6.0
+   push: false
+   build_args:
+   - PROTOCOL: s3
+
+
+
+

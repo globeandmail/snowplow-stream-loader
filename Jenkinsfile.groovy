@@ -41,22 +41,32 @@ def extractAppsToDeploy(String fileChanges) {
             echo "Revert Mode detected, automatic version bump disabled"
             isManualMode=true
         }
-        /*if (path.length >= 1) { // If there are only 1 parts or less, the file modified doesn't belong to a project
+        if (path.length >= 2) { // If there are only 3 parts or less, the file modified doesn't belong to a project
             for (i = 0; i < path.length; i++) {
-                applications.push(path[i + 1])
-                echo "${path[i + 1]}"
+                if (i + 1 <= path.length) { // not the last item
+                    if(path[-1]=="Dockerfile" || (path[0] == "code" && (path[i] == "core" || path[i] == "examples" || path[i] == "project"))){
+                        applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
+                    }
+                    if (path[0] == "code" && path[i] == "elasticsearch") {
+                        applications.push('loader~elasticsearch')
+                        echo "loader~elasticsearch"
+                    }
+                    if (path[0] == "code" && path[i] == "postgres") {
+                        applications.push('loader~postgres')
+                        echo "loader~postgres"
+                    }
+                    if (path[0] == "code" && path[i] == "s3") {
+                        applications.push('loader~s3')
+                        echo "loader~s3"
+                    }
+                }
             }
-        }*/
+        }
 
     }
 
     return applications.unique()
 }
-
-def getBuildFilePath(String component) {
-    return component + './build.yaml'
-}
-
 
 def getDefaultTagVersion(buildPath) {
     def data = readYaml(file: buildPath)
@@ -75,8 +85,8 @@ def getPrebuildCommands(buildPath) {
     }
 }
 
-def getModules(String component) {
-    def buildPath = getBuildFilePath(component)
+def getModules() {
+    def buildPath = 'build.yaml'
     def data = readYaml(file: buildPath)
     def modules = []
 
@@ -141,7 +151,7 @@ def replaceSensitiveBuildArgsValues(buildArgs, Map svmVars) {
                 branch = getBranchName(svmVars)
                 echo "REPOSITORY_BRANCH replaced to "+
                         newBuildArgs.add(["REPOSITORY_BRANCH": getBranchName(svmVars)])
-            } else {
+            }  else {
                 newBuildArgs.add(map)
             }
         }
@@ -212,19 +222,27 @@ def getLabelFromCommitsApi(String commitSha) {
 
 def getLabel(String branchName) {
     def labels
-    try{
-        labels = getLabelFromPrApi(branchName)
+
+    if(!isManualMode) {
+        try {
+            labels = getLabelFromPrApi(branchName)
+        }
+        catch(e) {
+            throw new Exception("Please add labels to your PR")
+            echo  "No Version Labels found, failing build"
+            notifyFailed(e)
+        }
     }
-    catch (e){
-        echo "No Version Labels found, failing build"
-        notifyFailed(e)
+    else {
+        labels = null
     }
 
     return labels
+
 }
 
-def getModuleSettings(String component, String module, Map scmVars,String branchName,Boolean isPR) {
-    def buildPath = getBuildFilePath(component)
+def getModuleSettings(String module, Map scmVars,String branchName,Boolean isPR) {
+    def buildPath = 'build.yaml'
 
     def data = readYaml(file: buildPath)
     def buildArgs = ""
@@ -251,16 +269,18 @@ def getModuleSettings(String component, String module, Map scmVars,String branch
                 else{
                     if(isPR){
                         def tagVersion = moduleEntry.value.tag_version
-                        if(!isManualMode){
-                            def changeType = getLabel(branchName)
+                        def changeType = getLabel(branchName, component)
+                        if(!isManualMode && changeType!=null){
                             newTag = incrementVersionAndCommit(tagVersion.toString(),
                                     changeType.toString(), branchName,buildPath,false,module
                             )
                         }
-                        else{
-                            newTag=tagVersion
+                        else if(isManualMode){
+                            newTag = tagVersion
                         }
-
+                        else{
+                            newTag = tagRegularBranch(tagVersion,branchName)
+                        }
                     }
                     else{
                         newTag = moduleEntry.value.tag_version
@@ -278,7 +298,7 @@ def getModuleSettings(String component, String module, Map scmVars,String branch
 
 
 def getDefaultBuildArgs(String component, Map scmVars) {
-    def buildPath = getBuildFilePath(component)
+    def buildPath = 'build.yaml'
 
     def data = readYaml(file: buildPath)
     def buildArgs = ""
@@ -385,8 +405,16 @@ def getDevelopTag(String buildPath, String moduleName=""){
  * @param changeType The label on the PR. Valid values are 'major','minor' or 'patch'
  * @return
  */
-def bumpTag(String tag, String changeType){
-    def elements = tag.split("\\.")
+def bumpTag(String tag, String changeType, String branchName){
+    def elements
+
+    if(tag.toLowerCase().contains("snowplow-stream-loader")){
+        elements = tag.split("\\.")
+        elements[2] = elements[2].split("-")[0]
+    }
+    else{
+        elements = tag.split("\\.")
+    }
     def newTag
     def major,minor,patch
     if (elements.length == 3) {
@@ -413,6 +441,9 @@ def bumpTag(String tag, String changeType){
                 break
 
         }
+
+        newTag = newTag + "-develop-"+branchName.replace("issue/","").toLowerCase()
+
         return newTag
     }
 }
@@ -440,18 +471,20 @@ def updateBuildFileAndCommit(String tag, String buildPath,String branchName,Bool
         writeYaml(file: buildPath, data: data)
     }
 
+    def pathsToUpdate = buildPath
+
     //if git push is enabled for single commit
     if(gitPush){
         executeGitCommandWithCredentials("""
-                     git commit $buildPath -m 'Updated $buildPath tag version to $tag'
+                     git commit $pathsToUpdate -m 'Updated the file $pathsToUpdate tag version to $tag'
                      git push --set-upstream origin $branchName """)
     }
     else{
-        executeGitCommandWithCredentials("git commit $buildPath -m 'Updated $buildPath tag version to $tag'")
+        executeGitCommandWithCredentials("git commit $pathsToUpdate -m 'Updated the file $pathsToUpdate tag version to $tag'")
     }
 
 
-    echo "Updated file $buildPath,commiting"
+    echo "Updated file $pathsToUpdate,commiting"
 
 
 }
@@ -461,11 +494,10 @@ def incrementVersionAndCommit(String currentTag, String changeType, String branc
     def developTag = getDevelopTag(buildPath,moduleName)
     def newTag = ""
     if(developTag == currentTag){
-        newTag = bumpTag(currentTag,changeType)
-
+        newTag = bumpTag(currentTag,changeType,branchName)
     }
-    if(developTag > currentTag){
-        newTag = bumpTag(developTag.toString(),changeType)
+    else if(developTag > currentTag){
+        newTag = bumpTag(developTag.toString(),changeType,branchName)
     }
 
     if(developTag < currentTag){
@@ -501,11 +533,23 @@ def gitPush(String branchName){
 
 }
 
+def tagRegularBranch(tagVersion, branchName){
+    def imageTag = ""
+
+    if(branchName.contains("issue")){
+        imageTag = tagVersion.split('-')[0] + "-" + branchName.replace("issue/", "")
+    }
+    else{
+        imageTag = tagVersion.split('-')[0] + "-" + branchName
+    }
+
+    return imageTag
+}
 
 def getImageNamesAndBuildArgs(component, scmVars) {
-    def buildPath = getBuildFilePath(component)
+    def buildPath = 'build.yaml'
 
-    def baseImageName = "harbor.sophi.io/sophi4/"
+    def baseImageName = "harbor.sophi.io/sophi4/snowplow-stream-loader-"
     def branchName = getBranchName(scmVars)
     def modules
     def imageName
@@ -514,7 +558,7 @@ def getImageNamesAndBuildArgs(component, scmVars) {
     def labels = ""
 
 
-    modules = getModules(component)
+    modules = getModules()
     if (modules == null || modules.isEmpty()) {
         // regular build with no modules
         def buildArgs = getDefaultBuildArgs(component, scmVars)
@@ -523,16 +567,24 @@ def getImageNamesAndBuildArgs(component, scmVars) {
             commitTagToGit(imageTag)
         }
         else if(scmVars.GIT_BRANCH.contains("PR-")){
-            labels = getLabel(scmVars.GIT_BRANCH.toString())
+            labels = getLabel(scmVars.GIT_BRANCH.toString(), component)
             imageTag = getDefaultTagVersion(buildPath)
-            //If build.yaml is changed manually
-            if(!isManualMode){
+            // If build.yaml is not changed manually and component changed is api or dashboard
+            if(!isManualMode && labels!=null){
                 imageTag = incrementVersionAndCommit(imageTag.toString(),labels.toString(),branchName,buildPath,true)
             }
-
+            else if(isManualMode){
+                imageTag = getDefaultTagVersion(buildPath)
+            }
+            else{
+                imageTag = tagRegularBranch(imageTag,branchName)
+            }
         }
         else {
-            imageTag = getDefaultTagVersion(buildPath) +"-" + branchName.replace("issue/","")
+            imageTag = getDefaultTagVersion(buildPath)
+            if(!isManualMode){
+                imageTag = tagRegularBranch(imageTag,branchName)
+            }
         }
         imageName = baseImageName + component
         imageNamesAndBuildArgs.push([imageName: imageName, buildArgs: buildArgs, push: shallPush(buildPath),
@@ -545,9 +597,9 @@ def getImageNamesAndBuildArgs(component, scmVars) {
             def moduleSettings = []
 
             moduleSettings = getModuleSettings(component, moduleName, scmVars,branchName,false)
-            buildPath = getBuildFilePath(component)
+            buildPath = 'build.yaml'
             if(getBranchName(scmVars).contains("master")){
-                imageTag = moduleSettings.tagVersion.join("")
+                imageTag = moduleSettings.tagVersion[0]
                 //Create list of all tags
                 imageTags.push(imageTag)
             }
@@ -559,14 +611,14 @@ def getImageNamesAndBuildArgs(component, scmVars) {
                     def isTagUpdateBuild = moduleSettings
                     gitPush(branchName)
                 }
-
+                imageTag = moduleSettings.tagVersion[0]
             }
             else{
-                imageTag = (moduleSettings.tagVersion +"-" + branchName.replace("issue/","")).join("")
+                imageTag = tagRegularBranch(moduleSettings.tagVersion[0],branchName)
             }
-            imageName = baseImageName + component  + "_" + moduleName
+            imageName = baseImageName + "_" + moduleName
             imageNamesAndBuildArgs.push([imageName: imageName, buildArgs: moduleSettings.buildArgs.join(" "),
-                                         push: moduleSettings.push[0], imageTag: imageTag.toString().toLowerCase(), prebuildCommands: [] ])
+                                         push: moduleSettings.push[0], imageTag: imageTag.toString().toLowerCase(), prebuildCommands: getPrebuildCommands(buildPath) ])
         }
 
         //Take the highest tag version amongst all the modules as git release version
@@ -579,29 +631,13 @@ def getImageNamesAndBuildArgs(component, scmVars) {
     return imageNamesAndBuildArgs
 }
 
-def getChartParameters(component, module) {
-    def buildPath = getBuildFilePath(component)
-    def parameters = ""
+def setupKubeconfig() {
+    env.KUBECONFIG = 'kubeconfig'
+    sh(surpressCmdOutput('echo "$KUBECONFIG_CONTENT" > $KUBECONFIG'))
+}
 
-    if (fileExists(buildPath)) {
-        def data = readYaml(file: buildPath)
-
-        for (LinkedHashMap item : data.modules) {
-            def modulesEntries = item.entrySet()
-
-            modulesEntries.each { moduleEntry ->
-                if (moduleEntry.key == module) {
-                    def envVars = moduleEntry.value.env
-
-                    envVars.each { k, v ->
-                        parameters = parameters + "--set env.${k}=${v} "
-                    }
-                }
-            }
-        }
-    }
-
-    return parameters
+def surpressCmdOutput(cmd) {
+    return '#!/bin/sh -e\n' + cmd
 }
 
 def shallPush(String buildPath) {
@@ -657,13 +693,15 @@ podTemplate(label: label, containers: [
         }
 
         stage('Build image') {
-            uniqueApplications.each { component ->
+            uniqueApplications.each { loader ->
                 try {
-                    def buildPath = getBuildFilePath(component)
+                    def splited = loader.split('~')
+                    def component = splited[0]
+                    def buildPath = 'build.yaml'
                     if (!fileExists(buildPath)) {
                         echo "No 'build.yaml; file under " + buildPath
                     } else {
-                        echo "building: " + component
+                        echo "building: " + loader
                         container('docker') {
                             withCredentials([[$class          : 'UsernamePasswordMultiBinding',
                                               credentialsId   : 'harbor-account',
@@ -684,7 +722,7 @@ podTemplate(label: label, containers: [
                                             command ->
                                                 print sh(script: "${command}", returnStdout: true)
                                         }
-                                        sh("docker build --network host ${buildArgs} -t ${imageName}:${imageTag} ${getDockerFilePath(component)}")
+                                        sh("docker build --network host ${buildArgs} -t ${imageName}:${imageTag}")
                                         if (shallPushImage) {
                                             sh("docker push ${imageName}")
                                         }
