@@ -42,9 +42,8 @@ trait UsingTSDB {
   sqlDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 
   val log = LoggerFactory.getLogger(getClass)
-  val mainSchema = "atomic"
   val partitionSchema = "partition"
-  val coreTableName = "events"
+  val (mainSchema, coreTableName) = extractTableSchemaName(parentTable)
   val schemaFiles: mutable.Map[String, String] = collection.mutable.Map(schemas.toSeq: _*)
   val existingTables = mutable.Set[String]()
   implicit val formats = org.json4s.DefaultFormats
@@ -63,6 +62,11 @@ trait UsingTSDB {
     )
 
   implicit val dataSource = createDataSource
+
+  def extractTableSchemaName(schemaAndTableName: String): (String, String) =
+    if (schemaAndTableName.split("\\.").length == 2)
+      (schemaAndTableName.split("\\.")(0), schemaAndTableName.split("\\.")(1))
+    else ("atomic", "events")
 
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(
     implicit dataSource: DataSource
