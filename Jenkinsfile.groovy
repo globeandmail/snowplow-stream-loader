@@ -41,31 +41,27 @@ def extractAppsToDeploy(String fileChanges) {
             echo "Revert Mode detected, automatic version bump disabled"
             isManualMode=true
         }
-        if (path.length >= 2) { // If there are only 3 parts or less, the file modified doesn't belong to a project
-            for (i = 0; i < path.length; i++) {
-                if (i + 1 <= path.length) { // not the last item
-                   /* if (path[0] == "code" && path[i] == "elasticsearch") {
-                        applications.push('loader~elasticsearch')
-                        echo "loader~elasticsearch"
-                    }
-                    if (path[0] == "code" && path[i] == "postgres") {
-                        applications.push('loader~postgres')
-                        echo "loader~postgres"
-                    }
-                    if (path[0] == "code" && path[i] == "s3") {
-                        applications.push('loader~s3')
-                        echo "loader~s3"
-                    }
-                    else {
-                        applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
-                    } */
-                    applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
+        if (path[0] == "Dockerfile" ) {
+            applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
+        }else if ( path[0] == "code" ){
+            if ( path[1] != "elasticsearch" && path[1] != "postgres" && path[1] != "s3"  ) {
+                applications = ['loader~elasticsearch', 'loader~postgres', 'loader~s3']
+            }else{
+                if ( path[1] == "elasticsearch") {
+                    applications.push('loader~elasticsearch')
+                    echo 'loader~elasticsearch'
+                }
+                if ( path[1] == "postgres") {
+                    applications.push('loader~postgres')
+                    echo 'loader~postgres'
+                }
+                if ( path[1] == "s3") {
+                    applications.push('loader~s3')
+                    echo 'loader~s3'
                 }
             }
         }
-
     }
-
     return applications.unique()
 }
 
