@@ -24,7 +24,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
-class BulkSenderPostgres(
+class BulkSenderTSDB(
   val host: String,
   val port: Int,
   val database: String,
@@ -32,19 +32,18 @@ class BulkSenderPostgres(
   val password: String,
   val parentTable: String,
   val partitionDateField: Option[String],
-  val partitionDateFormat: Option[String],
   val schemas: Map[String, String],
   val filterAppId: Option[String],
   deduplicationCacheRepository: Option[Cache[String, Boolean]],
   deduplicationField: String,
   override val tracker: Option[Tracker] = None
 ) extends BulkSender[EmitterJsonInput]
-    with UsingPostgres {
+    with UsingTSDB {
 
   val maxConnectionWaitTimeMs: Long = 10000
   val maxAttempts: Int = 2
 
-  case object PostgresFilterTypes {
+  case object TSDBFilterTypes {
     val APP_ID = "app_id"
   }
   // do not close the es client, otherwise it will fail when resharding
@@ -92,7 +91,8 @@ class BulkSenderPostgres(
         .mapValues { recordsForPartition =>
           if (filterVals.nonEmpty) {
             val filteredRecords = recordsForPartition.filter { rec =>
-              val extractedValueOption = extractStringElementFromJson(PostgresFilterTypes.APP_ID, rec.json)
+              val extractedValueOption =
+                extractStringElementFromJson(TSDBFilterTypes.APP_ID, rec.json)
               extractedValueOption.exists(filterVals.contains)
             }
             filteredRecords
@@ -100,8 +100,8 @@ class BulkSenderPostgres(
         }
         .filter(_._2.nonEmpty)
         .map {
-          case (partitionName, recordsForPartition) =>
-            futureToTask(Future(write(partitionName, recordsForPartition)))
+          case (null, recordsForPartition) =>
+            futureToTask(Future(write(null, recordsForPartition)))
               .retry(delays, exPredicate(connectionAttemptStartTime))
               .map {
                 {
@@ -149,7 +149,7 @@ class BulkSenderPostgres(
     if (response != "00000") { //failure
       Some(
         record._1.take(maxSizeWhenReportingFailure) ->
-          s"Postgres rejected record with message $response".failureNel
+          s"tsdb rejected record with message $response".failureNel
       )
     } else {
       None

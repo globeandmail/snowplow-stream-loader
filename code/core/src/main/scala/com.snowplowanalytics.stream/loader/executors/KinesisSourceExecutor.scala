@@ -61,7 +61,7 @@ class KinesisSourceExecutor[A, B](
   kinesisConnectorPipeline: IKinesisConnectorPipeline[A, B]
 ) extends KinesisConnectorExecutorBase[A, B] {
 
-  val LOG                     = LoggerFactory.getLogger(getClass)
+  val LOG = LoggerFactory.getLogger(getClass)
   val DEFAULT_LEASE_TABLE_RCU = 1
   val DEFAULT_LEASE_TABLE_WCU = 5
 
@@ -77,7 +77,10 @@ class KinesisSourceExecutor[A, B](
       case queueConfig: Kinesis =>
         props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, queueConfig.endpoint)
         props.setProperty(KinesisConnectorConfiguration.PROP_APP_NAME, queueConfig.appName.trim)
-        props.setProperty(KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM, queueConfig.initialPosition)
+        props.setProperty(
+          KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM,
+          queueConfig.initialPosition
+        )
         props.setProperty(KinesisConnectorConfiguration.PROP_MAX_RECORDS, queueConfig.maxRecords.toString)
         props.setProperty(KinesisConnectorConfiguration.PROP_DYNAMODB_ENDPOINT, queueConfig.dynamodbEndpoint)
         // So that the region of the DynamoDB table is correct
@@ -121,7 +124,12 @@ class KinesisSourceExecutor[A, B](
     new KinesisConnectorConfiguration(
       props,
       CredentialsLookup
-        .getCredentialsProvider(config.aws.accessKey, config.aws.secretKey, config.aws.arnRole, config.aws.stsRegion)
+        .getCredentialsProvider(
+          config.aws.accessKey,
+          config.aws.secretKey,
+          config.aws.arnRole,
+          config.aws.stsRegion
+        )
     )
   }
 
@@ -149,7 +157,7 @@ class KinesisSourceExecutor[A, B](
       .withMetricsBufferTimeMillis(kcc.CLOUDWATCH_BUFFER_TIME)
       .withMetricsMaxQueueSize(kcc.CLOUDWATCH_MAX_QUEUE_SIZE)
       .withUserAgent(
-        kcc.APP_NAME                  + ","
+        kcc.APP_NAME + ","
           + kcc.CONNECTOR_DESTINATION + ","
           + KinesisConnectorConfiguration.KINESIS_CONNECTOR_USER_AGENT
       )
@@ -173,7 +181,8 @@ class KinesisSourceExecutor[A, B](
     kinesisConnectorConfiguration: KinesisConnectorConfiguration,
     metricFactory: IMetricsFactory
   ): Unit = {
-    val kinesisClientLibConfiguration = getKCLConfig(initialPosition, initialTimestamp, kinesisConnectorConfiguration)
+    val kinesisClientLibConfiguration =
+      getKCLConfig(initialPosition, initialTimestamp, kinesisConnectorConfiguration)
 
     if (!kinesisConnectorConfiguration.CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST) {
       LOG.warn(
@@ -199,6 +208,9 @@ class KinesisSourceExecutor[A, B](
   initialize(convertConfig(streamLoaderConfig), null)
 
   def getKinesisConnectorRecordProcessorFactory =
-    new KinesisConnectorRecordProcessorFactory[A, B](kinesisConnectorPipeline, convertConfig(streamLoaderConfig))
+    new KinesisConnectorRecordProcessorFactory[A, B](
+      kinesisConnectorPipeline,
+      convertConfig(streamLoaderConfig)
+    )
 
 }

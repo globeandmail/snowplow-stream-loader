@@ -50,7 +50,7 @@ class SignedHttpClientConfigCallback(
   region: String
 ) extends HttpClientConfigCallback {
   private def clock(): LocalDateTime = LocalDateTime.now(ZoneId.of("UTC"))
-  private val service                = "es"
+  private val service = "es"
   private val signer =
     AwsSigner(credentialsProvider, region, service, () => SignedHttpClientConfigCallback.this.clock())
 

@@ -1,5 +1,7 @@
 package clients
 
+import java.lang
+
 import org.apache.commons.dbcp2.BasicDataSource
 import java.sql.{Connection, PreparedStatement, SQLException, Statement}
 
@@ -21,7 +23,7 @@ class PostgresClient {}
 case class DataSourceDefn(url: String, classDriveName: String, maxConnections: Integer = -1)
 
 // TODO: add connection pool
-trait UsingPostgres {
+trait UsingTSDB {
   implicit val host: String
   implicit val port: Int
   implicit val database: String
@@ -35,19 +37,13 @@ trait UsingPostgres {
   implicit val parentTable: String
   implicit val schemas: Map[String, String]
   implicit val partitionDateField: Option[String]
-  implicit val partitionDateFormat: Option[String]
 
-  val partitionDateFormatter: SimpleDateFormat = new SimpleDateFormat(
-    partitionDateFormat.getOrElse("yyyy_MM_dd")
-  )
-  partitionDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
   val sqlDateFormatter: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
   sqlDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
 
   val log = LoggerFactory.getLogger(getClass)
-  val mainSchema = "atomic"
   val partitionSchema = "partition"
-  val coreTableName = "events"
+  val (mainSchema, coreTableName) = extractTableSchemaName(parentTable)
   val schemaFiles: mutable.Map[String, String] = collection.mutable.Map(schemas.toSeq: _*)
   val existingTables = mutable.Set[String]()
   implicit val formats = org.json4s.DefaultFormats
@@ -67,21 +63,28 @@ trait UsingPostgres {
 
   implicit val dataSource = createDataSource
 
+  def extractTableSchemaName(schemaAndTableName: String): (String, String) =
+    if (schemaAndTableName.split("\\.").length == 2)
+      (schemaAndTableName.split("\\.")(0), schemaAndTableName.split("\\.")(1))
+    else ("atomic", "events")
+
   protected def write(partitionName: String, jsonRecords: List[JsonRecord])(
     implicit dataSource: DataSource
   ) = {
 
     val tableNames = Set(coreTableName)
     val tableNamesWithPartition =
-      tableNames.map(tableName => (tableName, tableNameForPartition(tableName, partitionName))).toMap
+      tableNames
+        .map(tableName => (tableName, tableNameForPartition(tableName, partitionName)))
+        .toMap
     createParentTablesIfNotExists(tableNames)
     if (partitionName != null) { // partitioning is active
-      createPartitionTablesIfNotExists(tableNamesWithPartition, partitionName)
+      log.error("no need for partitioning in TSDB")
     }
     withConnection { implicit connection =>
       connection.setAutoCommit(false)
       jsonRecords
-        .map(jsonRecord => createParentTableQueries(jsonRecord.json.values, tableNamesWithPartition))
+        .map(jsonRecord => createParentTableQueriesTSDB(jsonRecord.json.values))
         .map { statement =>
           try {
             statement.execute()
@@ -131,30 +134,27 @@ trait UsingPostgres {
     finally c.close
   }
 
-  private def withStatement[X](fn: Statement => X)(implicit dataSource: DataSource) = withConnection {
-    connection =>
+  private def withStatement[X](fn: Statement => X)(implicit dataSource: DataSource) =
+    withConnection { connection =>
       val statement = connection.createStatement()
       try fn(statement)
       finally statement.close
-  }
+    }
 
   /**
    * Generates insert query for parent table
    * @param jsonFields
-   * @param tableNamesWithPartition
    * @param connection
    * @return the prepared statement
    */
-  private def createParentTableQueries(
-    jsonFields: Map[String, Any],
-    tableNamesWithPartition: Map[String, String]
-  )(
+  private def createParentTableQueriesTSDB(jsonFields: Map[String, Any])(
     implicit connection: Connection
   ): PreparedStatement = {
+
     val columnNames = jsonFields.keys.map(c => utils.JsonUtils.camelToSnake(c)).mkString(",")
     val stringSigns = List.fill(jsonFields.values.size)("?").mkString(",")
     val insertStatement =
-      s"INSERT INTO $partitionSchema.${tableNamesWithPartition.get(coreTableName).get} ($columnNames) VALUES ($stringSigns)"
+      s"INSERT INTO $mainSchema.$coreTableName ($columnNames) VALUES ($stringSigns)"
     convertJsonFieldsToPreparedStatement(insertStatement, jsonFields)
   }
 
@@ -208,7 +208,10 @@ trait UsingPostgres {
       jsonFields
         .map {
           case (contextEventName: String, contextEventData: List[Map[String, Any]]) =>
-            (contextEventName, List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap))
+            (
+              contextEventName,
+              List(contextEventData.flatMap(internalMap2 => internalMap2.toList).toMap)
+            )
           // I had to do that wired flatMap to convert Map2/MapN to Seq and then to regular Map. This is either a Scala issue, Snowplow Bug or the library that converted that Json Object to Map.
           // We get MatchError exception, because filter doesn't work for all of the Map kids. The Library creates Map2, Map3, etc instead of Map
           // All of them go through this match/case but not filter
@@ -216,7 +219,8 @@ trait UsingPostgres {
           //(contexts_org_ietf_http_cookie_1,List(Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81), Map(name -> sp, value -> 1f0644fc-79e8-4b40-aee7-76dafe620e81))) (of class scala.Tuple2)
           case (unstructEventName: String, unstructEventData: Map[String, Any]) =>
             (unstructEventName, List(unstructEventData))
-          case _ => throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")
+          case _ =>
+            throw new RuntimeException(s"Not sure what do you want with ${jsonFields.toString}")
         }
         .toList
         .filter {
@@ -252,7 +256,9 @@ trait UsingPostgres {
    * @param tableNames
    * @param dataSource
    */
-  private def createParentTablesIfNotExists(tableNames: Set[String])(implicit dataSource: DataSource) =
+  private def createParentTablesIfNotExists(
+    tableNames: Set[String]
+  )(implicit dataSource: DataSource) =
     withStatement { implicit statement =>
       tableNames.foreach { tableName =>
         schemaFiles.get(tableName) match {
@@ -269,7 +275,9 @@ trait UsingPostgres {
    * @param dataSource
    * @return
    */
-  private def createTableWithDoubleCheck(tableName: String, schema: String)(implicit dataSource: DataSource) =
+  private def createTableWithDoubleCheck(tableName: String, schema: String)(
+    implicit dataSource: DataSource
+  ) =
     withStatement { implicit statement =>
       if (!tableExists(s"$mainSchema.$tableName")) {
         try {
@@ -281,64 +289,6 @@ trait UsingPostgres {
             }
           case e: Exception => throw e
         }
-      }
-    }
-
-  /**
-   * Creating the date sharded partition from the main table and attaching to it
-   * @param tableNamesWithPartition
-   * @param partitionName
-   * @param dataSource
-   * @return
-   */
-  private def createPartitionTablesIfNotExists(
-    tableNamesWithPartition: Map[String, String],
-    partitionName: String
-  )(
-    implicit dataSource: DataSource
-  ) =
-    withStatement { implicit statement =>
-      tableNamesWithPartition.map {
-        case (parentTable, partitionTableName) =>
-          if (!tableExists(s"$partitionSchema.$partitionTableName")) {
-            val partitionDate: Date = partitionDateFormatter.parse(partitionName)
-            val partitionDateString = sqlDateFormatter.format(partitionDate)
-            val nextPartitionDateString =
-              sqlDateFormatter.format(Date.from(partitionDate.toInstant.plus(1, ChronoUnit.DAYS)))
-            val partitionDateFieldString = if (parentTable == coreTableName) {
-              partitionDateField.get
-            } else {
-              "root_" + partitionDateField.get
-            }
-            val sql =
-              s"""
-                 | BEGIN;
-                 |
-                 | CREATE SCHEMA IF NOT EXISTS $partitionSchema ;
-                 |
-                 | CREATE TABLE  $partitionSchema.$partitionTableName
-                 |  (LIKE $mainSchema.$parentTable INCLUDING DEFAULTS INCLUDING CONSTRAINTS);
-                 |
-                 | ALTER TABLE $partitionSchema.$partitionTableName ADD CONSTRAINT p_$partitionName
-                 |   CHECK ( DATE '$partitionDateString' <= $partitionDateFieldString
-                 |    AND $partitionDateFieldString < DATE '$nextPartitionDateString' );
-                 |
-                 | ALTER TABLE $mainSchema.$parentTable ATTACH PARTITION $partitionSchema.$partitionTableName
-                 |    FOR VALUES FROM ('$partitionDateString') TO ('$nextPartitionDateString');
-                 |
-                 | COMMIT;
-             """.stripMargin
-            try {
-              statement.execute(sql)
-            } catch {
-              case e: PSQLException =>
-                if (!e.getMessage.contains("already exists") && !e.getMessage
-                      .contains("current transaction is aborted")) {
-                  //we can ignore the case that the table might exist. the rest we should raise.
-                  throw e
-                }
-            }
-          }
       }
     }
 

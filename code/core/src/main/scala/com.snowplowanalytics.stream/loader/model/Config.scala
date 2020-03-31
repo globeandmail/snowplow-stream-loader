@@ -32,7 +32,12 @@ package Config {
   case object PlainJson extends StreamType
 
   case class SinkConfig(good: String, bad: String)
-  case class AWSConfig(accessKey: String, secretKey: String, arnRole: Option[String], stsRegion: Option[String])
+  case class AWSConfig(
+    accessKey: String,
+    secretKey: String,
+    arnRole: Option[String],
+    stsRegion: Option[String]
+  )
 
   sealed trait QueueConfig
   final case class Nsq(
@@ -59,7 +64,10 @@ package Config {
         val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
         JsonUtils.fold(Try(format.parse(s)))(t => Left(t.getMessage), Right(_))
       }
-    require(initialPosition != "AT_TIMESTAMP" || timestampEither.isRight, timestampEither.left.getOrElse(""))
+    require(
+      initialPosition != "AT_TIMESTAMP" || timestampEither.isRight,
+      timestampEither.left.getOrElse("")
+    )
 
     val timestamp = timestampEither.right.toOption
 
@@ -118,6 +126,18 @@ package Config {
     shardTableDateFormat: Option[String],
     filterAppId: Option[String]
   )
+  case class TSDBConfig(
+    server: String,
+    port: Int,
+    databaseName: String,
+    username: String,
+    password: String,
+    table: String,
+    schemas: String,
+    shardTableDateField: Option[String],
+    shardTableDateFormat: Option[String],
+    filterAppId: Option[String]
+  )
   case class S3Config(
     bucket: String,
     s3AccessKey: String,
@@ -147,6 +167,7 @@ package Config {
     queueConfig: QueueConfig,
     streams: StreamsConfig,
     postgres: Option[PostgresConfig],
+    tsdb: Option[TSDBConfig],
     elasticsearch: Option[ESConfig],
     s3: Option[S3Config],
     kinesis: Option[KinesisConfig],
@@ -158,7 +179,10 @@ package Config {
       case "good"       => Good
       case "bad"        => Bad
       case "plain-json" => PlainJson
-      case _            => throw new IllegalArgumentException("\"enabled\" must be set to \"good\", \"bad\" or \"plain-json\" ")
+      case _ =>
+        throw new IllegalArgumentException(
+          "\"enabled\" must be set to \"good\", \"bad\" or \"plain-json\" "
+        )
     }
   }
   case class DeduplicationCache(

@@ -33,7 +33,7 @@ lazy val commonDependencies = Seq(
   Dependencies.Libraries.pureConfig,
   Dependencies.Libraries.awsSts,
   Dependencies.Libraries.awsCore,
- // Dependencies.Libraries.json4sJackson,
+  // Dependencies.Libraries.json4sJackson,
   // Scala (test only)
   Dependencies.Libraries.specs2
 )
@@ -61,7 +61,7 @@ lazy val allSettings = buildSettings ++
 
 lazy val root = project.in(file("."))
   .settings(buildSettings)
-  .aggregate(core, elasticsearch, postgres, s3)
+  .aggregate(core, elasticsearch, postgres, s3, tsdb)
 
 lazy val core = project
   .settings(moduleName := "snowplow-stream-loader-core")
@@ -86,8 +86,18 @@ lazy val postgres = project
   .settings(allSettings)
   //.settings(resolvers ++= Seq( "Maven2 Central Repository" at "http://central.maven.org/maven2/"))
   .settings(libraryDependencies ++= Seq (
-  Dependencies.Libraries.commonsDbcp,
-  Dependencies.Libraries.postgresql))
+    Dependencies.Libraries.commonsDbcp,
+    Dependencies.Libraries.postgresql))
+  .dependsOn(core)
+
+// project dealing with tsdb
+lazy val tsdb = project
+  .settings(moduleName := "snowplow-stream-loader-tsdb")
+  .settings(allSettings)
+  //.settings(resolvers ++= Seq( "Maven2 Central Repository" at "http://central.maven.org/maven2/"))
+  .settings(libraryDependencies ++= Seq (
+    Dependencies.Libraries.commonsDbcp,
+    Dependencies.Libraries.postgresql))
   .dependsOn(core)
 
 // project dealing with S3
@@ -95,10 +105,10 @@ lazy val s3 = project
   .settings(moduleName := "snowplow-stream-loader-s3-parquet")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq (
-     Dependencies.Libraries.hadoopAws,
-      Dependencies.Libraries.hadoopCommon,
-      Dependencies.Libraries.parquetAvro,
-      Dependencies.Libraries.kiteDataCore
-    )
+    Dependencies.Libraries.hadoopAws,
+    Dependencies.Libraries.hadoopCommon,
+    Dependencies.Libraries.parquetAvro,
+    Dependencies.Libraries.kiteDataCore
+  )
   )
   .dependsOn(core)

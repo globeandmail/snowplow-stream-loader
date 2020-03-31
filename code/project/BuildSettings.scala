@@ -69,4 +69,10 @@ object BuildSettings {
         oldStrategy(x)
     }
   )
+  // Scalafmt plugin
+  import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
+  lazy val formatting = Seq(
+    scalafmtConfig    := file(".scalafmt.conf"),
+    scalafmtOnCompile := true
+  )
 }

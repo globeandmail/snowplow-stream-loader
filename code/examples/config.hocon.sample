@@ -143,6 +143,19 @@ postgres {
     filterAppId = "{{postgresFilterAppId}}"
 }
 
+tsdb {
+    server = "{{tsdbServer}}"
+    port = "{{tsdbPort}}"
+    databaseName = "{{tsdbDatabaseName}}"
+    username = "{{tsdbUsername}}"
+    password = "{{tsdbPassword}}"
+    schemas = "{{tsdbSchemas}}"
+    table = "{{tsdbTable}}"
+    shardTableDateField = "{{shardDateField}}"
+    shardTableDateFormat = "{{shardDateFormat}}"
+    filterAppId = "{{tsdbFilterAppId}}"
+}
+
 elasticsearch {
 
   # Events are indexed using an Elasticsearch Client

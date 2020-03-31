@@ -76,6 +76,14 @@ ENV LOG_LEVEL="info"\
     POSTGRES_TABLE="atomic.events" \
     POSTGRES_SCHEMAS="schemas" \
     POSTGRES_SINK_APP_ID_FILTER="" \
+    TSDB_SERVER="" \
+    TSDB_PORT="5432" \
+    TSDB_DATABASE_NAME="postgres" \
+    TSDB_USERNAME="postgres" \
+    TSDB_PASSWORD="postgres" \
+    TSDB_TABLE="atomic.events" \
+    TSDB_SCHEMAS="schemas" \
+    TSDB_SINK_APP_ID_FILTER="" \
     SHARD_DATE_FIELD="derived_tstamp" \
     SHARD_DATE_FORMAT="yyyy_MM_dd" \
     BUCKET="tgam-sophi-data" \
@@ -96,15 +104,18 @@ ENV LOG_LEVEL="info"\
     DEDUPLICATION_TIME_LIMIT="3600" \
     CENTRAL_BRANCH=master \
     # to enable localstack set this to 1
-    AWS_CBOR_DISABLE=0
+    AWS_CBOR_DISABLE=0 \
+    REPO_NAME="sophi4" \
+    SCHEMA_DIR="tsdbsql" \
+    QUEUE="kinesis"
 
 CMD cd /out/stream-loader && \
     if [ ! -d schemas ]; then \
         echo "grabbing $CENTRAL_BRANCH version of sophi/central" && \
         apk add --no-cache git && \
         rm -r -f repo && \
-        git clone -c http.sslVerify=false  --single-branch -b ${CENTRAL_BRANCH} https://${GITHUB_TOKEN}@github.com/globeandmail/sophi3.git repo && \
-        mv repo/central/pgsql/ schemas && \
+        git clone -c http.sslVerify=false  --single-branch -b ${CENTRAL_BRANCH} https://${GITHUB_TOKEN}@github.com/globeandmail/${REPO_NAME}.git repo && \
+        mv repo/central/${SCHEMA_DIR}/ schemas && \
         cp repo/central/es/mapping.json . && \
         rm -r -f repo && \
         apk del --purge git ; \
@@ -154,6 +165,14 @@ CMD cd /out/stream-loader && \
     sed -i "s/{{postgresTable}}/${POSTGRES_TABLE}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/{{postgresSchemas}}/${POSTGRES_SCHEMAS}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/{{postgresFilterAppId}}/${POSTGRES_SINK_APP_ID_FILTER}/g" /out/stream-loader/stream-loader.conf && \
+    sed -i "s/{{tsdbServer}}/${TSDB_SERVER}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbPort}}/${TSDB_PORT}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbDatabaseName}}/${TSDB_DATABASE_NAME}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbUsername}}/${TSDB_USERNAME}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbPassword}}/${TSDB_PASSWORD}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbTable}}/${TSDB_TABLE}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbSchemas}}/${TSDB_SCHEMAS}/g" /out/stream-loader/stream-loader.conf  && \
+    sed -i "s/{{tsdbFilterAppId}}/${TSDB_SINK_APP_ID_FILTER}/g" /out/stream-loader/stream-loader.conf && \
     sed -i "s/{{shardDateField}}/${SHARD_DATE_FIELD}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/{{shardDateFormat}}/${SHARD_DATE_FORMAT}/g" /out/stream-loader/stream-loader.conf  && \
     sed -i "s/shardTableDateField = \"\"//g" /out/stream-loader/stream-loader.conf  && \

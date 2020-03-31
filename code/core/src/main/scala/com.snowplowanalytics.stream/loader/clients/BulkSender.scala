@@ -46,7 +46,7 @@ trait BulkSender[A] {
   // it can be sent to a bad sink. This way we don't have to compute the size of the byte
   // representation of the utf-8 string.
   val maxSizeWhenReportingFailure = 20000
-  implicit val strategy           = Strategy.DefaultExecutorService
+  implicit val strategy = Strategy.DefaultExecutorService
 
   def send(records: List[A]): List[A]
   def close(): Unit

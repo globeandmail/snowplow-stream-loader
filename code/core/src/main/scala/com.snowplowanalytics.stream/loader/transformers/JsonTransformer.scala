@@ -59,9 +59,14 @@ class JsonTransformer(
 ) extends ITransformer[ValidatedJsonRecord, EmitterJsonInput]
     with StdinTransformer {
 
-  val log           = LoggerFactory.getLogger(getClass)
-  val dateFormatter = new SimpleDateFormat(documentIndexSuffixFormat.getOrElse(""))
-  dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
+  val log = LoggerFactory.getLogger(getClass)
+
+  private val dateFormatter: Option[SimpleDateFormat] = documentIndexSuffixFormat match {
+    case Some(format) if !(format.trim.isEmpty()) => new SimpleDateFormat(format).some
+    case _                                        => None
+  }
+
+  private val shardingField = documentIndexSuffixField.getOrElse("derived_tstamp")
 
   /**
    * Convert an Amazon Kinesis record to a JSON string
@@ -92,32 +97,39 @@ class JsonTransformer(
   private def toJsonRecord(record: String): ValidationNel[String, JsonRecord] =
     jsonifyGoodEvent(
       record
-        .replace("\\u0000", "") // arc sends events with null character and postgres doesn't like it.
+        .replace(
+          "\\u0000",
+          ""
+        ) // arc sends events with null character and postgres doesn't like it.
         .split("\t", -1)
     ) match {
       case Left(h :: t) => NonEmptyList(h, t: _*).failure
       case Left(Nil)    => "Empty list of failures but reported failure, should not happen".failureNel
       case Right((_, rawJson)) =>
-        val json =
-          JsonUtils.denormalizeEvent(JsonUtils.renameField(rawJson, mappingTable))
+        val json = JsonUtils.denormalizeEvent(JsonUtils.renameField(rawJson, mappingTable))
 
-        documentIndexSuffixField match {
-          case Some(suffix) =>
-            val indexWithDateSuffix = JsonUtils.extractField(json, suffix) match {
-              case Some(date) => epochToFormattedDate(DateTime.parse(date).withZone(DateTimeZone.UTC).getMillis, suffix)
-              case None =>
-                throw new NullPointerException(
-                  documentIndexSuffixField + " has null value, so we cannot extract the value"
+        dateFormatter match {
+          case Some(dateF) =>
+            val shard = json \ shardingField match {
+              case JString(timestampString) =>
+                dateF
+                  .format(
+                    DateTime
+                      .parse(timestampString)
+                      .withZone(DateTimeZone.UTC)
+                      .getMillis
+                  )
+              case _ =>
+                throw new RuntimeException(
+                  documentIndexSuffixField + " is not a JString, so we cannot extract the value"
                 )
             }
-            JsonRecord(json.asInstanceOf[JObject], indexWithDateSuffix).success
+
+            JsonRecord(json.asInstanceOf[JObject], shard).success
           case None =>
             JsonRecord(json.asInstanceOf[JObject], null).success
         }
     }
-
-  private def epochToFormattedDate(epochMillis: Long, format: String): String =
-    dateFormatter.format(epochMillis)
 
   /**
    * Consume data from stdin rather than Kinesis
